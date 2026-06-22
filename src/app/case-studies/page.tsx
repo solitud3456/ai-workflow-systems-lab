@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import InfoCard from "@/components/InfoCard";
 
 const caseStudies = [
   {
@@ -37,41 +38,14 @@ export default function CaseStudiesPage() {
           description="Each case study explains the business problem, manual process, AI-assisted workflow, data model, human review pattern, limitations, and future automation path."
         />
 
-        <div className="mt-10 space-y-5">
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
           {caseStudies.map((study) => (
-            <article
+            <InfoCard
               key={study.title}
-              className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-2xl font-semibold text-white">
-                  {study.title}
-                </h2>
-                <span className="w-fit rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-                  {study.status}
-                </span>
-              </div>
-
-              <div className="mt-5 grid gap-5 md:grid-cols-2">
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-                    Problem
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
-                    {study.problem}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-                    Portfolio proof
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
-                    {study.proof}
-                  </p>
-                </div>
-              </div>
-            </article>
+              title={study.title}
+              tag={study.status}
+              description={`${study.problem} Portfolio proof: ${study.proof}`}
+            />
           ))}
         </div>
       </section>
