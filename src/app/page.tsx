@@ -25,6 +25,13 @@ export default function Home() {
   </Link>
 
   <Link
+    href="/case-studies"
+    className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
+  >
+    Read case studies
+  </Link>
+
+  <Link
     href="/methods"
     className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
   >
