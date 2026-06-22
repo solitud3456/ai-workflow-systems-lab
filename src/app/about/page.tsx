@@ -1,14 +1,13 @@
+import PageHeader from "@/components/PageHeader";
 export default function AboutPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
       <section className="mx-auto max-w-4xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-400">
-          About
-        </p>
-
-        <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-          A solo-built AI workflow portfolio lab.
-        </h1>
+        <PageHeader
+  eyebrow="About"
+  title="A solo-built AI workflow portfolio lab."
+  description="Built step by step to prove practical AI workflow, dashboard, documentation, and business-process skills."
+/>
 
         <div className="mt-8 space-y-6 text-lg leading-8 text-slate-300">
           <p>
