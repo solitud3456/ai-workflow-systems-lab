@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import InfoCard from "@/components/InfoCard";
 const methods = [
   "Workflow mapping",
   "Structured AI outputs",
@@ -22,15 +23,14 @@ export default function MethodsPage() {
 />
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
-          {methods.map((method) => (
-            <div
-              key={method}
-              className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5"
-            >
-              <p className="font-medium text-white">{method}</p>
-            </div>
-          ))}
-        </div>
+  {methods.map((method) => (
+    <InfoCard
+      key={method}
+      title={method}
+      description="A practical method used to keep AI outputs structured, reviewable, and connected to real workflow actions."
+    />
+  ))}
+</div>
       </section>
     </main>
   );
