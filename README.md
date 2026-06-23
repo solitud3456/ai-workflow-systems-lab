@@ -4,6 +4,12 @@ A portfolio lab for building practical AI-assisted workflow prototypes.
 
 This project is a beginner-friendly but serious portfolio project focused on learning how AI can fit inside real business workflows. It is not a fake agency and does not claim to have clients. The goal is to build small working demos that show workflow thinking, structured AI outputs, human review, saved state, and clear limitations.
 
+## Links
+
+- Live site: [https://ai-workflow-systems-lab.vercel.app](https://ai-workflow-systems-lab.vercel.app)
+- Lead Follow-up Assistant demo: [/demos/lead-follow-up](https://ai-workflow-systems-lab.vercel.app/demos/lead-follow-up)
+- Case study: [/case-studies](https://ai-workflow-systems-lab.vercel.app/case-studies)
+
 ## Current Live Demo
 
 ### Lead Follow-up Assistant

@@ -42,6 +42,15 @@ export default function Home() {
           human review, and dashboard-based process improvement. The first live
           working demo is now available: Lead Follow-up Assistant.
         </p>
+        <p className="mt-4 text-sm font-medium text-slate-400">
+          Live site deployed at{" "}
+          <a
+            href="https://ai-workflow-systems-lab.vercel.app"
+            className="text-cyan-300 transition hover:text-cyan-200"
+          >
+            ai-workflow-systems-lab.vercel.app
+          </a>
+        </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/demos/lead-follow-up"
