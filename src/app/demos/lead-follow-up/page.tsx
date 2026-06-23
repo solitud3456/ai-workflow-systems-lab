@@ -95,6 +95,13 @@ export default function LeadFollowUpPage() {
   }, [leads]);
 
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? leads[0];
+  const statusCounts = statusOptions.map((status) => ({
+    status,
+    count: leads.filter((lead) => lead.status === status).length,
+  }));
+
+  const reviewedCount = leads.filter((lead) => lead.analysisApproved).length;
+  const analyzedCount = leads.filter((lead) => lead.analysis).length;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -282,6 +289,42 @@ Return JSON using this exact shape:
               <span className="w-fit rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
                 {leads.length} lead{leads.length === 1 ? "" : "s"}
               </span>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-5">
+              {statusCounts.map((item) => (
+                <div
+                  key={item.status}
+                  className="rounded-xl border border-slate-800 bg-slate-950/60 p-3"
+                >
+                  <p className="text-xs font-medium text-slate-500">
+                    {item.status}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold text-white">
+                    {item.count}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <p className="text-xs font-medium text-slate-500">
+                  AI analyses saved
+                </p>
+                <p className="mt-1 text-2xl font-semibold text-white">
+                  {analyzedCount}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <p className="text-xs font-medium text-slate-500">
+                  Human-reviewed analyses
+                </p>
+                <p className="mt-1 text-2xl font-semibold text-white">
+                  {reviewedCount}
+                </p>
+              </div>
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
