@@ -99,6 +99,30 @@ export default function LeadFollowUpPage() {
     );
   }
 
+  function buildLeadAnalysisPrompt(lead: Lead) {
+    return `You are helping analyze a customer inquiry for a small business.
+
+Return ONLY valid JSON. Do not include markdown. Do not include extra explanation.
+
+Customer lead:
+- Name: ${lead.name}
+- Source: ${lead.source}
+- Current status: ${lead.status}
+- Follow-up date: ${lead.followUpDate || "Not set"}
+- Internal notes: ${lead.notes || "None"}
+- Customer message: ${lead.message || "No message provided"}
+
+Return JSON using this exact shape:
+{
+  "summary": "one-sentence summary of what the customer wants",
+  "urgency": "low | medium | high",
+  "customerIntent": "what the customer is probably trying to do",
+  "suggestedReply": "a professional reply draft that a human can review before sending",
+  "nextAction": "the next practical follow-up action for the business",
+  "riskNote": "anything uncertain, missing, or risky about the inquiry"
+}`;
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
       <section className="mx-auto max-w-7xl">
@@ -290,6 +314,23 @@ export default function LeadFollowUpPage() {
                         updateLeadNotes(selectedLead.id, event.target.value)
                       }
                       className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400"
+                    />
+                  </div>
+
+                  <div className="mt-5 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4">
+                    <p className="text-sm font-semibold text-cyan-200">
+                      Manual AI prompt
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      Copy this prompt into ChatGPT or Claude. Later we will
+                      paste the JSON result back into the app.
+                    </p>
+
+                    <textarea
+                      readOnly
+                      value={buildLeadAnalysisPrompt(selectedLead)}
+                      rows={12}
+                      className="mt-4 w-full rounded-xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-300 outline-none"
                     />
                   </div>
                 </div>
