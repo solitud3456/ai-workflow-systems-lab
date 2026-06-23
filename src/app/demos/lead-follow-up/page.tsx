@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 
 type LeadStatus = "New" | "Contacted" | "Waiting" | "Booked" | "Lost";
@@ -36,9 +36,34 @@ const initialLeads: Lead[] = [
   },
 ];
 
+const STORAGE_KEY = "ai-workflow-systems-lab-leads";
+
 export default function LeadFollowUpPage() {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [selectedLeadId, setSelectedLeadId] = useState<number>(1);
+
+  useEffect(() => {
+    const savedLeads = window.localStorage.getItem(STORAGE_KEY);
+
+    if (!savedLeads) {
+      return;
+    }
+
+    try {
+      const parsedLeads = JSON.parse(savedLeads) as Lead[];
+
+      if (parsedLeads.length > 0) {
+        setLeads(parsedLeads);
+        setSelectedLeadId(parsedLeads[0].id);
+      }
+    } catch {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+  }, [leads]);
 
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? leads[0];
 
@@ -87,8 +112,9 @@ export default function LeadFollowUpPage() {
           <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
             <h2 className="text-2xl font-semibold text-white">Lead intake</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Add a messy customer inquiry. For now this uses local React state.
-              Later we will add manual AI mode and persistence.
+              Add a messy customer inquiry. Records now persist in the browser
+              with localStorage. Later we will add manual AI mode and database
+              storage.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
