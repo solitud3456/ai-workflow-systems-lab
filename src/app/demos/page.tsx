@@ -2,11 +2,12 @@ import PageHeader from "@/components/PageHeader";
 import InfoCard from "@/components/InfoCard";
 const demos = [
   {
-    title: "Lead Follow-up Assistant",
-    status: "Builds first",
-    description:
-      "A workflow demo for turning customer inquiries into structured lead records, reply drafts, urgency scores, and follow-up actions.",
-  },
+  title: "Lead Follow-up Assistant",
+  status: "Builds first",
+  href: "/demos/lead-follow-up",
+  description:
+    "A workflow demo for turning customer inquiries into structured lead records, reply drafts, urgency scores, and follow-up actions.",
+},
   {
     title: "HR Workflow Assistant",
     status: "Planned",
@@ -34,11 +35,12 @@ export default function DemosPage() {
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {demos.map((demo) => (
             <InfoCard
-              key={demo.title}
-              title={demo.title}
-              description={demo.description}
-              tag={demo.status}
-            />
+  key={demo.title}
+  title={demo.title}
+  description={demo.description}
+  tag={demo.status}
+  href={demo.href}
+/>
           ))}
         </div>
       </section>
