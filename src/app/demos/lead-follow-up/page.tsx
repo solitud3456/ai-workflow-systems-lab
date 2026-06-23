@@ -5,6 +5,15 @@ import PageHeader from "@/components/PageHeader";
 
 type LeadStatus = "New" | "Contacted" | "Waiting" | "Booked" | "Lost";
 
+type LeadAnalysis = {
+  summary: string;
+  urgency: "low" | "medium" | "high";
+  customerIntent: string;
+  suggestedReply: string;
+  nextAction: string;
+  riskNote: string;
+};
+
 type Lead = {
   id: number;
   name: string;
@@ -13,6 +22,8 @@ type Lead = {
   status: LeadStatus;
   followUpDate: string;
   notes: string;
+  analysis?: LeadAnalysis;
+  analysisApproved: boolean;
 };
 
 const statusOptions: LeadStatus[] = [
@@ -33,6 +44,7 @@ const initialLeads: Lead[] = [
     status: "New",
     followUpDate: "",
     notes: "Sample lead to show the workflow before adding AI mode.",
+    analysisApproved: false,
   },
 ];
 
@@ -41,24 +53,41 @@ const STORAGE_KEY = "ai-workflow-systems-lab-leads";
 export default function LeadFollowUpPage() {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [selectedLeadId, setSelectedLeadId] = useState<number>(1);
+  const [analysisJsonByLeadId, setAnalysisJsonByLeadId] = useState<
+    Record<number, string>
+  >({});
 
   useEffect(() => {
     const savedLeads = window.localStorage.getItem(STORAGE_KEY);
+    let animationFrameId: number | undefined;
 
     if (!savedLeads) {
-      return;
+      return undefined;
     }
 
     try {
       const parsedLeads = JSON.parse(savedLeads) as Lead[];
 
       if (parsedLeads.length > 0) {
-        setLeads(parsedLeads);
-        setSelectedLeadId(parsedLeads[0].id);
+        const savedLeadRecords = parsedLeads.map((lead) => ({
+          ...lead,
+          analysisApproved: lead.analysisApproved ?? false,
+        }));
+
+        animationFrameId = window.requestAnimationFrame(() => {
+          setLeads(savedLeadRecords);
+          setSelectedLeadId(savedLeadRecords[0].id);
+        });
       }
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
     }
+
+    return () => {
+      if (animationFrameId !== undefined) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -80,6 +109,7 @@ export default function LeadFollowUpPage() {
       status: "New",
       followUpDate: String(formData.get("followUpDate") || ""),
       notes: String(formData.get("notes") || ""),
+      analysisApproved: false,
     };
 
     setLeads((currentLeads) => [newLead, ...currentLeads]);
@@ -96,6 +126,31 @@ export default function LeadFollowUpPage() {
   function updateLeadNotes(id: number, notes: string) {
     setLeads((currentLeads) =>
       currentLeads.map((lead) => (lead.id === id ? { ...lead, notes } : lead)),
+    );
+  }
+
+  function saveLeadAnalysis(id: number, rawJson: string) {
+    let analysis: LeadAnalysis;
+
+    try {
+      analysis = JSON.parse(rawJson) as LeadAnalysis;
+    } catch {
+      window.alert("The pasted AI output is not valid JSON. Try again.");
+      return;
+    }
+
+    setLeads((currentLeads) =>
+      currentLeads.map((lead) =>
+        lead.id === id ? { ...lead, analysis, analysisApproved: false } : lead,
+      ),
+    );
+  }
+
+  function approveLeadAnalysis(id: number) {
+    setLeads((currentLeads) =>
+      currentLeads.map((lead) =>
+        lead.id === id ? { ...lead, analysisApproved: true } : lead,
+      ),
     );
   }
 
@@ -332,7 +387,125 @@ Return JSON using this exact shape:
                       rows={12}
                       className="mt-4 w-full rounded-xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-300 outline-none"
                     />
+
+                    <div className="mt-5">
+                      <label
+                        className="text-sm font-medium text-cyan-100"
+                        htmlFor="aiAnalysisJson"
+                      >
+                        Paste AI JSON result
+                      </label>
+                      <textarea
+                        id="aiAnalysisJson"
+                        value={analysisJsonByLeadId[selectedLead.id] ?? ""}
+                        onChange={(event) =>
+                          setAnalysisJsonByLeadId((currentDrafts) => ({
+                            ...currentDrafts,
+                            [selectedLead.id]: event.target.value,
+                          }))
+                        }
+                        rows={8}
+                        className="mt-2 w-full rounded-xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-300 outline-none transition focus:border-cyan-400"
+                        placeholder='Paste the AI JSON here, starting with {"summary": ...}'
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          saveLeadAnalysis(
+                            selectedLead.id,
+                            analysisJsonByLeadId[selectedLead.id] ?? "",
+                          )
+                        }
+                        className="mt-3 rounded-full bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                      >
+                        Save AI analysis
+                      </button>
+                    </div>
                   </div>
+
+                  {selectedLead.analysis ? (
+                    <div className="mt-5 rounded-xl border border-cyan-500/20 bg-slate-900/80 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm font-semibold text-cyan-200">
+                          Saved AI analysis
+                        </p>
+                        <span
+                          className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                            selectedLead.analysisApproved
+                              ? "bg-cyan-500/10 text-cyan-200"
+                              : "bg-amber-500/10 text-amber-200"
+                          }`}
+                        >
+                          {selectedLead.analysisApproved ? "Approved" : "Needs review"}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Summary
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-300">
+                            {selectedLead.analysis.summary}
+                          </p>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              Urgency
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-slate-300">
+                              {selectedLead.analysis.urgency}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              Customer intent
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-slate-300">
+                              {selectedLead.analysis.customerIntent}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Next action
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-300">
+                            {selectedLead.analysis.nextAction}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Risk note
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-300">
+                            {selectedLead.analysis.riskNote}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Suggested reply
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">
+                            {selectedLead.analysis.suggestedReply}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => approveLeadAnalysis(selectedLead.id)}
+                        className="mt-4 rounded-full border border-cyan-400/40 px-5 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+                      >
+                        Mark as human-reviewed
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
