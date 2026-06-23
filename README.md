@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Workflow Systems Lab
 
-## Getting Started
+A portfolio lab for building practical AI-assisted workflow prototypes.
 
-First, run the development server:
+This project is a beginner-friendly but serious portfolio project focused on learning how AI can fit inside real business workflows. It is not a fake agency and does not claim to have clients. The goal is to build small working demos that show workflow thinking, structured AI outputs, human review, saved state, and clear limitations.
+
+## Current Live Demo
+
+### Lead Follow-up Assistant
+
+The first working demo is the Lead Follow-up Assistant. It shows how a messy customer inquiry can become a structured lead record, an AI-assisted analysis, and a human-reviewed follow-up draft.
+
+It currently demonstrates:
+
+- lead intake
+- status tracking
+- localStorage persistence
+- manual AI prompt generation
+- pasted JSON analysis
+- human-in-the-loop review
+- suggested reply copying
+- dashboard metrics
+- demo management controls
+
+## Project Method
+
+This lab uses a workflow-first development method:
+
+- Start with a messy real-world business process.
+- Build the workflow before adding paid API integration.
+- Use manual AI mode first with structured prompts.
+- Ask AI tools for strict JSON outputs.
+- Paste AI JSON back into the app and save it.
+- Require human review before action.
+- Use small persistent prototypes before database or authentication work.
+- Turn each demo into portfolio proof with a problem, workflow, limitation, and upgrade path.
+
+## Tech Stack
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- localStorage
+- Git/GitHub
+
+## Current Limitations
+
+- localStorage only
+- no authentication
+- no database yet
+- no live AI API integration yet
+- manual AI copy/paste workflow
+
+## Planned Upgrades
+
+- Supabase/database storage
+- authentication
+- real AI API mode
+- CRM/email integrations
+- export/reporting
+- more workflow demos
+
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run lint checks:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+```
