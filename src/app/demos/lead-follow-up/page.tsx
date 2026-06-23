@@ -185,6 +185,20 @@ Return JSON using this exact shape:
 }`;
   }
 
+  async function copyLeadPrompt(lead: Lead) {
+    await navigator.clipboard.writeText(buildLeadAnalysisPrompt(lead));
+    window.alert("Prompt copied. Paste it into ChatGPT or Claude.");
+  }
+
+  async function copySuggestedReply(lead: Lead) {
+    if (!lead.analysis) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(lead.analysis.suggestedReply);
+    window.alert("Suggested reply copied.");
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
       <section className="mx-auto max-w-7xl">
@@ -416,13 +430,25 @@ Return JSON using this exact shape:
                   </div>
 
                   <div className="mt-5 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4">
-                    <p className="text-sm font-semibold text-cyan-200">
-                      Manual AI prompt
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-slate-400">
-                      Copy this prompt into ChatGPT or Claude. Later we will
-                      paste the JSON result back into the app.
-                    </p>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-cyan-200">
+                          Manual AI prompt
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-slate-400">
+                          Copy this prompt into ChatGPT or Claude. Later we will
+                          paste the JSON result back into the app.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => copyLeadPrompt(selectedLead)}
+                        className="w-fit rounded-full border border-cyan-400 px-4 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-400/10"
+                      >
+                        Copy prompt
+                      </button>
+                    </div>
 
                     <textarea
                       readOnly
@@ -531,9 +557,18 @@ Return JSON using this exact shape:
                         </div>
 
                         <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Suggested reply
-                          </p>
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              Suggested reply
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => copySuggestedReply(selectedLead)}
+                              className="w-fit rounded-full border border-cyan-400/40 px-4 py-2 text-xs font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+                            >
+                              Copy suggested reply
+                            </button>
+                          </div>
                           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">
                             {selectedLead.analysis.suggestedReply}
                           </p>
