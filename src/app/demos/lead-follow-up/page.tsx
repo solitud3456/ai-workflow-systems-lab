@@ -52,7 +52,7 @@ const STORAGE_KEY = "ai-workflow-systems-lab-leads";
 
 export default function LeadFollowUpPage() {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
-  const [selectedLeadId, setSelectedLeadId] = useState<number>(1);
+  const [selectedLeadId, setSelectedLeadId] = useState<number | null>(1);
   const [analysisJsonByLeadId, setAnalysisJsonByLeadId] = useState<
     Record<number, string>
   >({});
@@ -67,18 +67,15 @@ export default function LeadFollowUpPage() {
 
     try {
       const parsedLeads = JSON.parse(savedLeads) as Lead[];
+      const savedLeadRecords = parsedLeads.map((lead) => ({
+        ...lead,
+        analysisApproved: lead.analysisApproved ?? false,
+      }));
 
-      if (parsedLeads.length > 0) {
-        const savedLeadRecords = parsedLeads.map((lead) => ({
-          ...lead,
-          analysisApproved: lead.analysisApproved ?? false,
-        }));
-
-        animationFrameId = window.requestAnimationFrame(() => {
-          setLeads(savedLeadRecords);
-          setSelectedLeadId(savedLeadRecords[0].id);
-        });
-      }
+      animationFrameId = window.requestAnimationFrame(() => {
+        setLeads(savedLeadRecords);
+        setSelectedLeadId(savedLeadRecords[0]?.id ?? null);
+      });
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
     }
@@ -159,6 +156,37 @@ export default function LeadFollowUpPage() {
         lead.id === id ? { ...lead, analysisApproved: true } : lead,
       ),
     );
+  }
+
+  function deleteLead(id: number) {
+    if (!window.confirm("Delete this lead?")) {
+      return;
+    }
+
+    const remainingLeads = leads.filter((lead) => lead.id !== id);
+
+    setLeads(remainingLeads);
+    setAnalysisJsonByLeadId((currentDrafts) => {
+      const nextDrafts = { ...currentDrafts };
+      delete nextDrafts[id];
+      return nextDrafts;
+    });
+
+    if (selectedLeadId === id) {
+      setSelectedLeadId(remainingLeads[0]?.id ?? null);
+    }
+  }
+
+  function resetDemoData() {
+    if (
+      !window.confirm("Reset all demo leads back to the default sample data?")
+    ) {
+      return;
+    }
+
+    setLeads(initialLeads);
+    setSelectedLeadId(initialLeads[0].id);
+    setAnalysisJsonByLeadId({});
   }
 
   function buildLeadAnalysisPrompt(lead: Lead) {
@@ -300,9 +328,18 @@ Return JSON using this exact shape:
                   Select a lead, update status, and keep follow-up notes.
                 </p>
               </div>
-              <span className="w-fit rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-                {leads.length} lead{leads.length === 1 ? "" : "s"}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={resetDemoData}
+                  className="w-fit rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
+                >
+                  Reset demo data
+                </button>
+                <span className="w-fit rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
+                  {leads.length} lead{leads.length === 1 ? "" : "s"}
+                </span>
+              </div>
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-5">
@@ -343,29 +380,37 @@ Return JSON using this exact shape:
 
             <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="space-y-3">
-                {leads.map((lead) => (
-                  <button
-                    key={lead.id}
-                    type="button"
-                    onClick={() => setSelectedLeadId(lead.id)}
-                    className={`w-full rounded-xl border p-4 text-left transition ${
-                      selectedLead?.id === lead.id
-                        ? "border-cyan-400 bg-cyan-500/10"
-                        : "border-slate-800 bg-slate-950/60 hover:border-slate-600"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold text-white">{lead.name}</p>
-                      <span className="rounded-full bg-slate-800 px-2 py-1 text-xs text-slate-300">
-                        {lead.status}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-500">{lead.source}</p>
-                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">
-                      {lead.message}
+                {leads.length > 0 ? (
+                  leads.map((lead) => (
+                    <button
+                      key={lead.id}
+                      type="button"
+                      onClick={() => setSelectedLeadId(lead.id)}
+                      className={`w-full rounded-xl border p-4 text-left transition ${
+                        selectedLead?.id === lead.id
+                          ? "border-cyan-400 bg-cyan-500/10"
+                          : "border-slate-800 bg-slate-950/60 hover:border-slate-600"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold text-white">{lead.name}</p>
+                        <span className="rounded-full bg-slate-800 px-2 py-1 text-xs text-slate-300">
+                          {lead.status}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-slate-500">{lead.source}</p>
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">
+                        {lead.message}
+                      </p>
+                    </button>
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                    <p className="text-sm leading-6 text-slate-400">
+                      No leads yet. Add a customer inquiry to start.
                     </p>
-                  </button>
-                ))}
+                  </div>
+                )}
               </div>
 
               {selectedLead ? (
@@ -377,6 +422,13 @@ Return JSON using this exact shape:
                     {selectedLead.name}
                   </h3>
                   <p className="mt-2 text-sm text-slate-500">{selectedLead.source}</p>
+                  <button
+                    type="button"
+                    onClick={() => deleteLead(selectedLead.id)}
+                    className="mt-4 rounded-full border border-red-400/40 px-4 py-2 text-xs font-semibold text-red-200 transition hover:border-red-300 hover:bg-red-500/10"
+                  >
+                    Delete lead
+                  </button>
 
                   <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900/80 p-4">
                     <p className="text-sm font-semibold text-slate-300">
@@ -585,7 +637,13 @@ Return JSON using this exact shape:
                     </div>
                   ) : null}
                 </div>
-              ) : null}
+              ) : (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+                  <p className="text-sm leading-6 text-slate-400">
+                    No leads yet. Add a customer inquiry to start.
+                  </p>
+                </div>
+              )}
             </div>
           </section>
         </div>
