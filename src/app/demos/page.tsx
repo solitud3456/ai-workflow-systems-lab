@@ -39,36 +39,30 @@ const documentIntakeFeatures = [
   "Demo management controls",
 ];
 
-const demoProof = [
+const demoComparison = [
   {
     title: "Lead Follow-up Assistant",
-    points: [
-      "Messy customer inquiry intake",
-      "Lead status tracking",
-      "Manual AI follow-up prompt",
-      "JSON analysis saving",
-      "Human-reviewed suggested replies",
-    ],
+    workflowArea: "Customer follow-up",
+    mainInput: "Customer inquiry",
+    aiOutput: "Follow-up summary and suggested reply",
+    href: "/demos/lead-follow-up",
+    linkLabel: "Open lead demo",
   },
   {
     title: "Recruitment Workflow Assistant",
-    points: [
-      "Candidate intake",
-      "Screening workflow",
-      "Structured AI evaluation",
-      "Interview question generation",
-      "Human-reviewed hiring support",
-    ],
+    workflowArea: "Recruitment screening",
+    mainInput: "Candidate notes and application text",
+    aiOutput: "Candidate screening analysis and interview questions",
+    href: "/demos/recruitment-assistant",
+    linkLabel: "Open recruitment demo",
   },
   {
     title: "Document Intake Assistant",
-    points: [
-      "Messy document intake",
-      "Structured extraction",
-      "Missing information detection",
-      "Action item generation",
-      "Human-reviewed document handling",
-    ],
+    workflowArea: "Document intake",
+    mainInput: "Messy document text",
+    aiOutput: "Document summary, missing information, and action items",
+    href: "/demos/document-intake",
+    linkLabel: "Open document demo",
   },
 ];
 
@@ -209,7 +203,7 @@ export default function DemosPage() {
 
         <section className="mt-14 border-t border-slate-800 pt-10">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-400">
-            Portfolio proof
+            Demo comparison
           </p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <h2 className="text-3xl font-semibold tracking-tight text-white">
@@ -222,25 +216,56 @@ export default function DemosPage() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-3">
-            {demoProof.map((demo) => (
+          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+            {demoComparison.map((demo) => (
               <article
                 key={demo.title}
-                className="border-l border-slate-700 pl-5"
+                className="flex flex-col rounded-lg border border-slate-800 bg-slate-900/50 p-5"
               >
                 <h3 className="text-lg font-semibold text-white">
                   {demo.title}
                 </h3>
-                <ul className="mt-4 space-y-3">
-                  {demo.points.map((point) => (
-                    <li
-                      key={point}
-                      className="text-sm leading-6 text-slate-400"
-                    >
-                      {point}
-                    </li>
-                  ))}
-                </ul>
+                <dl className="mt-5 flex-1 space-y-4">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Workflow area
+                    </dt>
+                    <dd className="mt-1 text-sm leading-6 text-slate-300">
+                      {demo.workflowArea}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Main input
+                    </dt>
+                    <dd className="mt-1 text-sm leading-6 text-slate-300">
+                      {demo.mainInput}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      AI output
+                    </dt>
+                    <dd className="mt-1 text-sm leading-6 text-slate-300">
+                      {demo.aiOutput}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Human review
+                    </dt>
+                    <dd className="mt-1 text-sm leading-6 text-slate-300">
+                      Human approves analysis before using the output.
+                    </dd>
+                  </div>
+                </dl>
+
+                <Link
+                  href={demo.href}
+                  className="mt-6 w-fit rounded-full border border-cyan-400/40 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+                >
+                  {demo.linkLabel}
+                </Link>
               </article>
             ))}
           </div>
