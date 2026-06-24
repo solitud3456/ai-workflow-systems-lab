@@ -48,6 +48,20 @@ const initialLeads: Lead[] = [
   },
 ];
 
+const sampleLeadAnalysis: LeadAnalysis = {
+  summary:
+    "The customer is interested in the service and wants to know the price and availability.",
+  urgency: "medium",
+  customerIntent:
+    "The customer is comparing options and may be ready to book if the price and schedule fit.",
+  suggestedReply:
+    "Hi, thanks for reaching out. I’d be happy to help. Could you tell me which service you are interested in and what date or time works best for you? After that, I can confirm availability and send you the correct price.",
+  nextAction:
+    "Ask the customer to confirm the exact service they want and their preferred date or time.",
+  riskNote:
+    "The customer did not provide enough details about the exact service, preferred schedule, or budget.",
+};
+
 const STORAGE_KEY = "ai-workflow-systems-lab-leads";
 
 export default function LeadFollowUpPage() {
@@ -216,6 +230,15 @@ Return JSON using this exact shape:
   async function copyLeadPrompt(lead: Lead) {
     await navigator.clipboard.writeText(buildLeadAnalysisPrompt(lead));
     window.alert("Prompt copied. Paste it into ChatGPT or Claude.");
+  }
+
+  async function copySampleJson() {
+    await navigator.clipboard.writeText(
+      JSON.stringify(sampleLeadAnalysis, null, 2),
+    );
+    window.alert(
+      "Sample JSON copied. Paste it into the AI JSON result box.",
+    );
   }
 
   async function copySuggestedReply(lead: Lead) {
@@ -529,18 +552,31 @@ Return JSON using this exact shape:
                         className="mt-2 w-full rounded-xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-300 outline-none transition focus:border-cyan-400"
                         placeholder='Paste the AI JSON here, starting with {"summary": ...}'
                       />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          saveLeadAnalysis(
-                            selectedLead.id,
-                            analysisJsonByLeadId[selectedLead.id] ?? "",
-                          )
-                        }
-                        className="mt-3 rounded-full bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-                      >
-                        Save AI analysis
-                      </button>
+                      <p className="mt-3 text-xs leading-5 text-slate-400">
+                        Testing the demo? Copy sample JSON, paste it below, then
+                        save the analysis.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={copySampleJson}
+                          className="rounded-full border border-cyan-400/40 px-5 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+                        >
+                          Copy sample JSON
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            saveLeadAnalysis(
+                              selectedLead.id,
+                              analysisJsonByLeadId[selectedLead.id] ?? "",
+                            )
+                          }
+                          className="rounded-full bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                        >
+                          Save AI analysis
+                        </button>
+                      </div>
                     </div>
                   </div>
 
