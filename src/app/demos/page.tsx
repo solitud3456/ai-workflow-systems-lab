@@ -77,13 +77,22 @@ export default function DemosPage() {
         />
 
         <aside className="mt-8 border-y border-cyan-500/20 py-4 text-sm leading-6 text-slate-400">
-          <span className="font-semibold text-cyan-200">
-            Browser-based prototypes:
-          </span>{" "}
-          demo data stays in your browser through localStorage. There is no
-          account, database, or live AI API yet; manual AI mode means copying a
-          prompt into ChatGPT or Claude and pasting the JSON result back into
-          the demo.
+          <p>
+            <span className="font-semibold text-cyan-200">
+              Browser-based prototypes:
+            </span>{" "}
+            demo data stays in your browser through localStorage. There is no
+            account, database, or live AI API yet; manual AI mode means copying
+            a prompt into ChatGPT or Claude and pasting the JSON result back
+            into the demo.
+          </p>
+          <p className="mt-2 text-slate-300">
+            For a quick test without opening an AI tool, click{" "}
+            <span className="font-semibold text-cyan-200">
+              Copy sample JSON
+            </span>
+            , paste it into the AI JSON result box, and save the analysis.
+          </p>
         </aside>
 
         <section className="mt-10 rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-6">
