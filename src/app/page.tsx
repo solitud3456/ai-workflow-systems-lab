@@ -32,6 +32,16 @@ const documentIntakeFeatures = [
   "Dashboard metrics",
 ];
 
+const sharedWorkflowPattern = [
+  "Intake",
+  "Status tracking",
+  "Manual AI prompt",
+  "Strict JSON analysis",
+  "Human review",
+  "Copyable output",
+  "Dashboard metrics",
+];
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
@@ -82,6 +92,41 @@ export default function Home() {
             Read case study
           </Link>
         </div>
+
+        <section className="mt-14 border-y border-slate-800 py-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-400">
+                Shared method
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+                One repeatable workflow pattern
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-slate-400">
+              The same structure supports customer inquiries, candidate
+              screening, and document intake. These remain manual-AI,
+              localStorage prototypes built as portfolio proof, not agency
+              claims or production automation.
+            </p>
+          </div>
+
+          <ol className="mt-8 grid gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
+            {sharedWorkflowPattern.map((step, index) => (
+              <li
+                key={step}
+                className="border-l border-slate-700 pl-4"
+              >
+                <p className="text-xs font-semibold text-cyan-300">
+                  {String(index + 1).padStart(2, "0")}
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-200">
+                  {step}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </section>
 
         <section className="mt-10 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-6">
           <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
