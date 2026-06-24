@@ -9,6 +9,7 @@ const proofPoints = [
   "Human review",
   "Status tracking",
   "Local persistence",
+  "Dashboard metrics",
   "Documentation and case studies",
 ];
 
@@ -36,10 +37,10 @@ export default function AboutPage() {
             AI assistance, saving useful state, and documenting the limits.
           </p>
           <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
-            The first working demo is the Lead Follow-up Assistant. It shows how
-            customer inquiries can move through intake, local persistence, manual
-            AI prompt generation, pasted JSON analysis, human review, suggested
-            reply copy, and dashboard-style tracking.
+            The lab now has two working demos. Lead Follow-up Assistant explores
+            customer inquiry and follow-up workflows. Recruitment Workflow
+            Assistant applies the same practical method to candidate screening,
+            interview preparation, and human-reviewed recruiter next steps.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -47,7 +48,13 @@ export default function AboutPage() {
               href="/demos/lead-follow-up"
               className="rounded-full bg-cyan-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
             >
-              Open live demo
+              Open lead demo
+            </Link>
+            <Link
+              href="/demos/recruitment-assistant"
+              className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+            >
+              Open recruitment demo
             </Link>
             <Link
               href="/demos"
@@ -65,7 +72,7 @@ export default function AboutPage() {
               href="/case-studies"
               className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
             >
-              Read case study
+              Read case studies
             </Link>
           </div>
         </section>
@@ -76,10 +83,10 @@ export default function AboutPage() {
               What this lab is for
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              The goal is to learn by building: identify a practical workflow,
-              create a usable prototype, test the shape of the AI-assisted
-              process, and explain what works, what is still manual, and what
-              should be upgraded next.
+              The goal is to learn by building practical AI-assisted workflow
+              prototypes: identify a real process, create a usable interface,
+              test the structured AI-assisted flow, and explain what works,
+              what remains manual, and what should be upgraded next.
             </p>
           </section>
 
