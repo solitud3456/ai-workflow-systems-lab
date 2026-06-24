@@ -34,15 +34,40 @@ const nextUpgrades = [
   "Export and reporting for follow-up performance and pipeline review.",
 ];
 
+const recruitmentWorkflowSteps = [
+  "Capture candidate details, application text, source, and internal recruiter notes.",
+  "Track each candidate through New, Screening, Interview, Offer, or Rejected status.",
+  "Generate a structured manual AI screening prompt for the selected candidate.",
+  "Paste the AI JSON result back into the app.",
+  "Save the candidate summary, fit signal, strengths, concerns, next action, risk note, and interview questions.",
+  "Review the saved analysis and explicitly mark it as human-reviewed.",
+  "Copy the suggested interview questions for practical screening preparation.",
+];
+
+const recruitmentValuePoints = [
+  "AI-assisted HR workflow design around candidate screening rather than isolated text generation.",
+  "Structured JSON outputs that can be saved, reviewed, measured, and reused.",
+  "Human-in-the-loop review that keeps recruiters responsible for decisions and follow-up.",
+  "Dashboard metrics for candidate status, saved analyses, and completed human review.",
+  "Practical screening support without treating AI fit signals as final hiring decisions.",
+];
+
+const recruitmentLimitations = [
+  "Manual AI mode only: the user copies the prompt into ChatGPT or Claude and pastes the JSON result back.",
+  "LocalStorage only: candidate records stay in one browser and are not suitable for real applicant data.",
+  "No real database, authentication, applicant tracking system, email integration, or live AI API yet.",
+];
+
+const recruitmentNextUpgrades = [
+  "Database storage for candidate records, screening analyses, and review history.",
+  "Authentication and private recruiter workspaces.",
+  "Applicant tracking system integration for synchronized candidate status.",
+  "Email and calendar integration for interview coordination.",
+  "Export and reporting for pipeline review and screening activity.",
+  "Automated AI API mode with explicit review controls before action.",
+];
+
 const plannedCaseStudies = [
-  {
-    title: "HR Workflow Assistant",
-    status: "Planned",
-    problem:
-      "HR teams need to organize candidate information, summarize CVs, prepare interviews, and track onboarding without letting AI make final hiring decisions.",
-    proof:
-      "This case study will show how AI can assist HR operations while keeping human decision-making in control.",
-  },
   {
     title: "Document Intake Assistant",
     status: "Planned",
@@ -149,6 +174,106 @@ export default function CaseStudiesPage() {
               <h3 className="text-lg font-semibold text-white">Next upgrades</h3>
               <ul className="mt-3 space-y-3">
                 {nextUpgrades.map((item) => (
+                  <li key={item} className="text-sm leading-6 text-slate-400">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        </article>
+
+        <article className="mt-16">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+                  Portfolio lab case study
+                </span>
+                <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white">
+                  Recruitment Workflow Assistant
+                </h2>
+                <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
+                  This demo explores how candidate information can move from
+                  scattered notes into structured screening support, suggested
+                  interview questions, and human-reviewed next steps. It
+                  demonstrates the workflow honestly without presenting AI as
+                  an autonomous recruiter or final hiring authority.
+                </p>
+              </div>
+
+              <Link
+                href="/demos/recruitment-assistant"
+                className="w-fit rounded-full border border-cyan-400/60 px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+              >
+                Open recruitment demo
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">Problem</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                Hiring teams often receive messy candidate notes, resumes,
+                referrals, application text, and recruiter comments from
+                several channels. Important evidence can be difficult to
+                compare, screening questions may vary between candidates, and
+                next steps can become unclear without a shared workflow.
+              </p>
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">
+                Why it matters
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {recruitmentValuePoints.map((point) => (
+                  <li key={point} className="text-sm leading-6 text-slate-400">
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+
+          <section className="mt-8">
+            <h3 className="text-lg font-semibold text-white">Workflow</h3>
+            <ol className="mt-4 grid gap-3 md:grid-cols-2">
+              {recruitmentWorkflowSteps.map((step, index) => (
+                <li
+                  key={step}
+                  className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm leading-6 text-slate-300"
+                >
+                  <span className="mr-2 font-semibold text-cyan-300">
+                    {index + 1}.
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">
+                Current limitation
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {recruitmentLimitations.map((item) => (
+                  <li key={item} className="text-sm leading-6 text-slate-400">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">
+                Next upgrades
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {recruitmentNextUpgrades.map((item) => (
                   <li key={item} className="text-sm leading-6 text-slate-400">
                     {item}
                   </li>
