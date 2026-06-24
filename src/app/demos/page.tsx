@@ -1,6 +1,5 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
-import InfoCard from "@/components/InfoCard";
 
 const leadFollowUpFeatures = [
   "Lead intake",
@@ -25,13 +24,19 @@ const recruitmentFeatures = [
   "Demo management controls",
 ];
 
-const futureDemos = [
-  {
-    title: "Document Intake Assistant",
-    status: "Planned",
-    description:
-      "A workflow demo for extracting fields, summarizing documents, creating checklists, and supporting human review.",
-  },
+const documentIntakeFeatures = [
+  "Document intake",
+  "Document status tracking",
+  "localStorage persistence",
+  "Manual AI extraction prompt",
+  "Pasted JSON document analysis",
+  "Human review",
+  "Key points",
+  "Missing information",
+  "Action items",
+  "Copy action items",
+  "Dashboard metrics",
+  "Demo management controls",
 ];
 
 export default function DemosPage() {
@@ -130,22 +135,44 @@ export default function DemosPage() {
           </div>
         </section>
 
-        <div className="mt-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
-            Future demo ideas
-          </p>
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+            Live working demo
+          </span>
 
-          <div className="mt-5 grid gap-5 md:grid-cols-2">
-            {futureDemos.map((demo) => (
-              <InfoCard
-                key={demo.title}
-                title={demo.title}
-                description={demo.description}
-                tag={demo.status}
-              />
-            ))}
+          <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-3xl font-semibold tracking-tight text-white">
+                Document Intake Assistant
+              </h2>
+              <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
+                A manual-AI workflow demo for turning pasted document text into
+                structured summaries, key points, missing information, action
+                items, and human-reviewed next steps. It uses local browser
+                storage and does not imply a production knowledge system or
+                live document-processing API.
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {documentIntakeFeatures.map((feature) => (
+                  <span
+                    key={feature}
+                    className="rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-300"
+                  >
+                    {feature}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <Link
+              href="/demos/document-intake"
+              className="shrink-0 rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+            >
+              Open document demo
+            </Link>
           </div>
-        </div>
+        </section>
       </section>
     </main>
   );
