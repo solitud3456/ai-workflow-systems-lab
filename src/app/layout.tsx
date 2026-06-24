@@ -2,10 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 
+const siteDescription =
+  "Manual-AI workflow prototypes for lead follow-up, recruitment screening, and document intake.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ai-workflow-systems-lab.vercel.app"),
   title: "AI Workflow Systems Lab",
-  description:
-    "A solo-built portfolio lab for practical AI-assisted business workflow systems.",
+  description: siteDescription,
+  openGraph: {
+    title: "AI Workflow Systems Lab",
+    description: siteDescription,
+    url: "https://ai-workflow-systems-lab.vercel.app",
+    siteName: "AI Workflow Systems Lab",
+  },
 };
 
 const navItems = [
