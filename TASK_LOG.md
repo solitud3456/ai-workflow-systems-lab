@@ -15,3 +15,52 @@ Created initial documentation:
 Current phase:
 
 Phase 0 — Setup
+
+## 2026-06-24
+
+Completed the first three-demo portfolio milestone.
+
+Live demos:
+
+- Lead Follow-up Assistant
+- Recruitment Workflow Assistant
+- Document Intake Assistant
+
+All three demos now include:
+
+- intake form
+- status tracking
+- localStorage persistence
+- manual AI prompt generation
+- copy prompt
+- copy sample JSON
+- paste JSON result
+- save analysis
+- human review approval
+- copyable output
+- dashboard metrics
+- delete/reset demo controls
+
+Updated public project pages:
+
+- homepage
+- demos
+- case studies
+- methods
+- about
+- README
+
+Deployment:
+
+- GitHub repository pushed
+- Vercel site deployed: https://ai-workflow-systems-lab.vercel.app
+
+Quality checks:
+
+- `npm run lint` passed
+- `npm run build` passed
+
+Current state:
+
+The manual-AI, localStorage portfolio baseline is complete and ready for
+future database, authentication, integration, and live AI API upgrades.
