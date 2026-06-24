@@ -15,7 +15,7 @@ const methods = [
   {
     title: "Human-in-the-loop review",
     description:
-      "Treat AI suggestions as drafts, not final truth. The Lead Follow-up Assistant tracks whether an analysis has been approved before using the suggested reply.",
+      "Treat AI suggestions as drafts, not final truth. Both live demos track whether saved analysis has been human-reviewed before a reply, interview question, or next step is used.",
   },
   {
     title: "Small persistent prototypes",
@@ -27,6 +27,24 @@ const methods = [
     description:
       "Every demo should explain the problem, workflow, current limitation, and next upgrades. The project is presented as an applied AI workflow systems lab, not a fake agency.",
   },
+];
+
+const sharedPattern = [
+  "Messy intake",
+  "Status tracking",
+  "Manual AI prompt generation",
+  "Strict JSON output",
+  "Pasted AI analysis",
+  "Human review",
+  "Copyable next-step output",
+  "Dashboard metrics",
+  "localStorage persistence",
+];
+
+const whyItMatters = [
+  "AI supports the workflow without replacing human judgment.",
+  "AI output becomes structured data that can be saved, reviewed, measured, and reused.",
+  "The workflow can be tested before adding database, authentication, or API complexity.",
 ];
 
 export default function MethodsPage() {
@@ -44,27 +62,63 @@ export default function MethodsPage() {
             Current build method
           </span>
           <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">
-            The Lead Follow-up Assistant is the first working example of this
-            method. It starts with a small business follow-up problem, uses
-            manual AI mode to avoid premature API complexity, saves structured
-            results locally, and keeps a human review step before action.
+            The method is now proven in two live demos: Lead Follow-up Assistant
+            applies it to customer inquiries, while Recruitment Workflow
+            Assistant applies it to candidate screening. Both use manual AI
+            mode, save structured results locally, and keep a human review step
+            before action.
           </p>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link
               href="/demos/lead-follow-up"
               className="rounded-full bg-cyan-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
             >
-              See the method in the live demo
+              Open lead demo
+            </Link>
+            <Link
+              href="/demos/recruitment-assistant"
+              className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+            >
+              Open recruitment demo
             </Link>
             <Link
               href="/case-studies"
               className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
             >
-              Read the case study
+              Read case studies
             </Link>
           </div>
         </section>
+
+        <div className="mt-8 grid gap-5 lg:grid-cols-2">
+          <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+            <h2 className="text-xl font-semibold text-white">
+              Shared workflow pattern
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {sharedPattern.map((step) => (
+                <span
+                  key={step}
+                  className="rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-300"
+                >
+                  {step}
+                </span>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+            <h2 className="text-xl font-semibold text-white">Why it matters</h2>
+            <ul className="mt-4 space-y-3">
+              {whyItMatters.map((point) => (
+                <li key={point} className="text-sm leading-6 text-slate-400">
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
 
         <div className="mt-8 grid gap-5">
           {methods.map((method, index) => (
