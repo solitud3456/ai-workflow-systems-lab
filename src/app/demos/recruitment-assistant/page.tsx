@@ -55,6 +55,25 @@ const initialCandidates: Candidate[] = [
   },
 ];
 
+const sampleCandidateAnalysis: CandidateAnalysis = {
+  summary:
+    "The candidate has relevant customer service experience and appears suitable for an initial screening conversation.",
+  fitScore: "medium",
+  strengths:
+    "The candidate has prior communication experience, seems motivated, and may fit a client-facing role.",
+  concerns:
+    "The application does not clearly show technical skills, salary expectations, or long-term availability.",
+  suggestedInterviewQuestions: [
+    "Can you describe a time you handled a difficult customer or client?",
+    "What interests you about this role and this company?",
+    "What is your expected salary range and earliest available start date?",
+  ],
+  nextAction:
+    "Schedule a short screening interview and clarify availability, salary expectations, and role-specific skills.",
+  riskNote:
+    "The notes are incomplete, so the evaluation should not be treated as a final hiring decision.",
+};
+
 const STORAGE_KEY = "ai-workflow-systems-lab-candidates";
 
 function isCandidateAnalysis(value: unknown): value is CandidateAnalysis {
@@ -293,6 +312,15 @@ Return JSON using this exact shape:
       buildCandidateAnalysisPrompt(candidate),
     );
     window.alert("Prompt copied. Paste it into ChatGPT or Claude.");
+  }
+
+  async function copySampleJson() {
+    await navigator.clipboard.writeText(
+      JSON.stringify(sampleCandidateAnalysis, null, 2),
+    );
+    window.alert(
+      "Sample JSON copied. Paste it into the AI JSON result box.",
+    );
   }
 
   async function copyInterviewQuestions(candidate: Candidate) {
@@ -652,19 +680,32 @@ Return JSON using this exact shape:
                         className="mt-2 w-full rounded-xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-300 outline-none transition focus:border-cyan-400"
                         placeholder='Paste the AI JSON here, starting with {"summary": ...}'
                       />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          saveCandidateAnalysis(
-                            selectedCandidate.id,
-                            analysisJsonByCandidateId[selectedCandidate.id] ??
-                              "",
-                          )
-                        }
-                        className="mt-3 rounded-full bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-                      >
-                        Save AI analysis
-                      </button>
+                      <p className="mt-3 text-xs leading-5 text-slate-400">
+                        Testing the demo? Copy sample JSON, paste it below, then
+                        save the analysis.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={copySampleJson}
+                          className="rounded-full border border-cyan-400/40 px-5 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+                        >
+                          Copy sample JSON
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            saveCandidateAnalysis(
+                              selectedCandidate.id,
+                              analysisJsonByCandidateId[selectedCandidate.id] ??
+                                "",
+                            )
+                          }
+                          className="rounded-full bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                        >
+                          Save AI analysis
+                        </button>
+                      </div>
                     </div>
                   </div>
 
