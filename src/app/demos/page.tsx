@@ -12,13 +12,20 @@ const leadFollowUpFeatures = [
   "Dashboard metrics",
 ];
 
+const recruitmentFeatures = [
+  "Candidate intake",
+  "Candidate status tracking",
+  "localStorage persistence",
+  "Manual AI screening prompt",
+  "Pasted JSON candidate analysis",
+  "Human review",
+  "Interview question suggestions",
+  "Copy interview questions",
+  "Dashboard metrics",
+  "Demo management controls",
+];
+
 const futureDemos = [
-  {
-    title: "HR Workflow Assistant",
-    status: "Planned",
-    description:
-      "A workflow demo for organizing candidate records, CV summaries, interview preparation, and onboarding checklists.",
-  },
   {
     title: "Document Intake Assistant",
     status: "Planned",
@@ -81,6 +88,45 @@ export default function DemosPage() {
                 Read case study
               </Link>
             </div>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+            Live working demo
+          </span>
+
+          <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-3xl font-semibold tracking-tight text-white">
+                Recruitment Workflow Assistant
+              </h2>
+              <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
+                An applied workflow demo for organizing messy candidate notes
+                into structured screening summaries, interview questions, and
+                human-reviewed recruiter next steps. It uses manual AI
+                copy-and-paste and local browser storage, without implying a
+                production hiring system or automated hiring decision.
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {recruitmentFeatures.map((feature) => (
+                  <span
+                    key={feature}
+                    className="rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-300"
+                  >
+                    {feature}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <Link
+              href="/demos/recruitment-assistant"
+              className="shrink-0 rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+            >
+              Open recruitment demo
+            </Link>
           </div>
         </section>
 
