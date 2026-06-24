@@ -42,6 +42,33 @@ const sharedWorkflowPattern = [
   "Dashboard metrics",
 ];
 
+const workingNow = [
+  "Three live demos",
+  "localStorage persistence",
+  "Manual AI prompt generation",
+  "Pasted JSON analysis",
+  "Human review",
+  "Dashboard metrics",
+  "Copyable next-step outputs",
+];
+
+const notBuiltYet = [
+  "Real database",
+  "Authentication",
+  "Live AI API integration",
+  "CRM, ATS, or email integrations",
+  "File upload or OCR",
+  "Multi-user accounts",
+];
+
+const nextUpgrades = [
+  "Supabase or database storage",
+  "Authentication",
+  "Automated AI API mode with review controls",
+  "Export and reporting",
+  "Stronger reusable components",
+];
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
@@ -230,6 +257,63 @@ export default function Home() {
             >
               Open document demo
             </Link>
+          </div>
+        </section>
+
+        <section className="mt-14 border-t border-slate-800 pt-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-400">
+            Project status
+          </p>
+          <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="text-3xl font-semibold tracking-tight text-white">
+              What works, what does not, and what comes next
+            </h2>
+            <p className="max-w-xl text-sm leading-6 text-slate-400">
+              A transparent snapshot of this portfolio lab. The current build
+              proves the manual workflow before adding production database,
+              account, and integration complexity.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-8 lg:grid-cols-3">
+            <div className="border-l border-cyan-500/50 pl-5">
+              <h3 className="text-lg font-semibold text-cyan-200">
+                Working now
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {workingNow.map((item) => (
+                  <li key={item} className="text-sm leading-6 text-slate-300">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="border-l border-amber-500/40 pl-5">
+              <h3 className="text-lg font-semibold text-amber-200">
+                Not built yet
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {notBuiltYet.map((item) => (
+                  <li key={item} className="text-sm leading-6 text-slate-400">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="border-l border-slate-600 pl-5">
+              <h3 className="text-lg font-semibold text-white">
+                Next upgrades
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {nextUpgrades.map((item) => (
+                  <li key={item} className="text-sm leading-6 text-slate-300">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
       </section>
