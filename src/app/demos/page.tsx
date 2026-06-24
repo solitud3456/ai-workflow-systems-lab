@@ -76,6 +76,16 @@ export default function DemosPage() {
           description="Each demo is designed around a real business workflow: messy input, structured records, AI-assisted output, human review, and a clear next action."
         />
 
+        <aside className="mt-8 border-y border-cyan-500/20 py-4 text-sm leading-6 text-slate-400">
+          <span className="font-semibold text-cyan-200">
+            Browser-based prototypes:
+          </span>{" "}
+          demo data stays in your browser through localStorage. There is no
+          account, database, or live AI API yet; manual AI mode means copying a
+          prompt into ChatGPT or Claude and pasting the JSON result back into
+          the demo.
+        </aside>
+
         <section className="mt-10 rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-6">
           <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
             First live working demo
