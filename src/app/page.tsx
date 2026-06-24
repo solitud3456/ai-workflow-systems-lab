@@ -11,12 +11,17 @@ const leadFollowUpFeatures = [
   "Dashboard metrics",
 ];
 
+const recruitmentFeatures = [
+  "Candidate intake",
+  "Candidate status tracking",
+  "Manual AI screening prompt",
+  "Pasted JSON candidate analysis",
+  "Human review",
+  "Interview question suggestions",
+  "Dashboard metrics",
+];
+
 const futureDemos = [
-  {
-    title: "HR Workflow Assistant",
-    description:
-      "A planned workflow demo for candidate records, CV summaries, interview preparation, and onboarding tasks.",
-  },
   {
     title: "Document Intake Assistant",
     description:
@@ -39,8 +44,9 @@ export default function Home() {
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
           A solo-built portfolio lab showing how AI can support real workflows:
           lead follow-up, HR operations, document intake, structured outputs,
-          human review, and dashboard-based process improvement. The first live
-          working demo is now available: Lead Follow-up Assistant.
+          human review, and dashboard-based process improvement. Two live
+          working demos are now available: Lead Follow-up Assistant and
+          Recruitment Workflow Assistant.
         </p>
         <p className="mt-4 text-sm font-medium text-slate-400">
           Live site deployed at{" "}
@@ -105,6 +111,41 @@ export default function Home() {
               className="w-fit rounded-full bg-cyan-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
             >
               Open live demo
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+            Second live working demo
+          </span>
+          <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">
+                Recruitment Workflow Assistant
+              </h2>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+                An applied workflow demo for turning candidate notes into
+                structured screening summaries, suggested interview questions,
+                and human-reviewed recruiter next steps using manual AI mode.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {recruitmentFeatures.map((feature) => (
+                  <span
+                    key={feature}
+                    className="rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-300"
+                  >
+                    {feature}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <Link
+              href="/demos/recruitment-assistant"
+              className="w-fit shrink-0 rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+            >
+              Open recruitment demo
             </Link>
           </div>
         </section>
