@@ -2,6 +2,9 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/demo/EmptyState";
+import MetricCard from "@/components/demo/MetricCard";
+import ReviewStatusBadge from "@/components/demo/ReviewStatusBadge";
 
 type LeadStatus = "New" | "Contacted" | "Waiting" | "Booked" | "Lost";
 
@@ -70,28 +73,44 @@ export default function LeadFollowUpPage() {
   const [analysisJsonByLeadId, setAnalysisJsonByLeadId] = useState<
     Record<number, string>
   >({});
+  const [storageReady, setStorageReady] = useState(false);
 
   useEffect(() => {
     const savedLeads = window.localStorage.getItem(STORAGE_KEY);
     let animationFrameId: number | undefined;
 
-    if (!savedLeads) {
-      return undefined;
-    }
+    if (savedLeads) {
+      try {
+        const parsedLeads = JSON.parse(savedLeads) as unknown;
 
-    try {
-      const parsedLeads = JSON.parse(savedLeads) as Lead[];
-      const savedLeadRecords = parsedLeads.map((lead) => ({
-        ...lead,
-        analysisApproved: lead.analysisApproved ?? false,
-      }));
+        if (!Array.isArray(parsedLeads)) {
+          throw new Error("Saved lead data is not an array.");
+        }
 
+        const savedLeadRecords = (parsedLeads as Lead[]).map((lead) => ({
+          ...lead,
+          analysisApproved: lead.analysisApproved ?? false,
+        }));
+
+        animationFrameId = window.requestAnimationFrame(() => {
+          setLeads(savedLeadRecords);
+          setSelectedLeadId(
+            savedLeadRecords[0]?.id ?? initialLeads[0].id,
+          );
+          setStorageReady(true);
+        });
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
+        animationFrameId = window.requestAnimationFrame(() => {
+          setSelectedLeadId(initialLeads[0].id);
+          setStorageReady(true);
+        });
+      }
+    } else {
       animationFrameId = window.requestAnimationFrame(() => {
-        setLeads(savedLeadRecords);
-        setSelectedLeadId(savedLeadRecords[0]?.id ?? null);
+        setSelectedLeadId(initialLeads[0].id);
+        setStorageReady(true);
       });
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
     }
 
     return () => {
@@ -102,8 +121,12 @@ export default function LeadFollowUpPage() {
   }, []);
 
   useEffect(() => {
+    if (!storageReady) {
+      return;
+    }
+
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-  }, [leads]);
+  }, [leads, storageReady]);
 
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? leads[0];
   const statusCounts = statusOptions.map((status) => ({
@@ -367,38 +390,20 @@ Return JSON using this exact shape:
 
             <div className="mt-6 grid gap-3 sm:grid-cols-5">
               {statusCounts.map((item) => (
-                <div
+                <MetricCard
                   key={item.status}
-                  className="rounded-xl border border-slate-800 bg-slate-950/60 p-3"
-                >
-                  <p className="text-xs font-medium text-slate-500">
-                    {item.status}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold text-white">
-                    {item.count}
-                  </p>
-                </div>
+                  label={item.status}
+                  value={item.count}
+                />
               ))}
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-                <p className="text-xs font-medium text-slate-500">
-                  AI analyses saved
-                </p>
-                <p className="mt-1 text-2xl font-semibold text-white">
-                  {analyzedCount}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-                <p className="text-xs font-medium text-slate-500">
-                  Human-reviewed analyses
-                </p>
-                <p className="mt-1 text-2xl font-semibold text-white">
-                  {reviewedCount}
-                </p>
-              </div>
+              <MetricCard label="AI analyses saved" value={analyzedCount} />
+              <MetricCard
+                label="Human-reviewed analyses"
+                value={reviewedCount}
+              />
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
@@ -428,11 +433,10 @@ Return JSON using this exact shape:
                     </button>
                   ))
                 ) : (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-                    <p className="text-sm leading-6 text-slate-400">
-                      No leads yet. Add a customer inquiry to start.
-                    </p>
-                  </div>
+                  <EmptyState
+                    title="No leads yet."
+                    description="Add a customer inquiry to start."
+                  />
                 )}
               </div>
 
@@ -586,15 +590,9 @@ Return JSON using this exact shape:
                         <p className="text-sm font-semibold text-cyan-200">
                           Saved AI analysis
                         </p>
-                        <span
-                          className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
-                            selectedLead.analysisApproved
-                              ? "bg-cyan-500/10 text-cyan-200"
-                              : "bg-amber-500/10 text-amber-200"
-                          }`}
-                        >
-                          {selectedLead.analysisApproved ? "Approved" : "Needs review"}
-                        </span>
+                        <ReviewStatusBadge
+                          approved={selectedLead.analysisApproved}
+                        />
                       </div>
 
                       <div className="mt-4 space-y-4">
@@ -674,11 +672,10 @@ Return JSON using this exact shape:
                   ) : null}
                 </div>
               ) : (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
-                  <p className="text-sm leading-6 text-slate-400">
-                    No leads yet. Add a customer inquiry to start.
-                  </p>
-                </div>
+                <EmptyState
+                  title="No leads yet."
+                  description="Add a customer inquiry to start."
+                />
               )}
             </div>
           </section>

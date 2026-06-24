@@ -2,6 +2,9 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/demo/EmptyState";
+import MetricCard from "@/components/demo/MetricCard";
+import ReviewStatusBadge from "@/components/demo/ReviewStatusBadge";
 
 type DocumentStatus =
   | "New"
@@ -484,38 +487,20 @@ Return JSON using this exact shape:
 
             <div className="mt-6 grid gap-3 sm:grid-cols-5">
               {statusCounts.map((item) => (
-                <div
+                <MetricCard
                   key={item.status}
-                  className="rounded-xl border border-slate-800 bg-slate-950/60 p-3"
-                >
-                  <p className="text-xs font-medium text-slate-500">
-                    {item.status}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold text-white">
-                    {item.count}
-                  </p>
-                </div>
+                  label={item.status}
+                  value={item.count}
+                />
               ))}
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-                <p className="text-xs font-medium text-slate-500">
-                  AI analyses saved
-                </p>
-                <p className="mt-1 text-2xl font-semibold text-white">
-                  {analyzedCount}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-                <p className="text-xs font-medium text-slate-500">
-                  Human-reviewed analyses
-                </p>
-                <p className="mt-1 text-2xl font-semibold text-white">
-                  {reviewedCount}
-                </p>
-              </div>
+              <MetricCard label="AI analyses saved" value={analyzedCount} />
+              <MetricCard
+                label="Human-reviewed analyses"
+                value={reviewedCount}
+              />
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
@@ -552,11 +537,10 @@ Return JSON using this exact shape:
                     </button>
                   ))
                 ) : (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-                    <p className="text-sm leading-6 text-slate-400">
-                      No documents yet. Add pasted content to start.
-                    </p>
-                  </div>
+                  <EmptyState
+                    title="No documents yet."
+                    description="Add pasted content to start."
+                  />
                 )}
               </div>
 
@@ -727,17 +711,9 @@ Return JSON using this exact shape:
                         <p className="text-sm font-semibold text-cyan-200">
                           Saved AI analysis
                         </p>
-                        <span
-                          className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
-                            selectedDocument.analysisApproved
-                              ? "bg-cyan-500/10 text-cyan-200"
-                              : "bg-amber-500/10 text-amber-200"
-                          }`}
-                        >
-                          {selectedDocument.analysisApproved
-                            ? "Approved"
-                            : "Needs review"}
-                        </span>
+                        <ReviewStatusBadge
+                          approved={selectedDocument.analysisApproved}
+                        />
                       </div>
 
                       <div className="mt-4 space-y-4">
@@ -858,11 +834,10 @@ Return JSON using this exact shape:
                   ) : null}
                 </div>
               ) : (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
-                  <p className="text-sm leading-6 text-slate-400">
-                    No documents yet. Add pasted content to start.
-                  </p>
-                </div>
+                <EmptyState
+                  title="No documents yet."
+                  description="Add pasted content to start."
+                />
               )}
             </div>
           </section>
