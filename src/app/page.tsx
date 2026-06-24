@@ -1,5 +1,4 @@
 import Link from "next/link";
-import InfoCard from "@/components/InfoCard";
 
 const leadFollowUpFeatures = [
   "Lead intake",
@@ -21,12 +20,16 @@ const recruitmentFeatures = [
   "Dashboard metrics",
 ];
 
-const futureDemos = [
-  {
-    title: "Document Intake Assistant",
-    description:
-      "A planned workflow demo for extracted fields, document summaries, checklists, and human-review warnings.",
-  },
+const documentIntakeFeatures = [
+  "Document intake",
+  "Document status tracking",
+  "Manual AI extraction prompt",
+  "Pasted JSON document analysis",
+  "Human review",
+  "Key points",
+  "Missing information",
+  "Action items",
+  "Dashboard metrics",
 ];
 
 export default function Home() {
@@ -44,9 +47,9 @@ export default function Home() {
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
           A solo-built portfolio lab showing how AI can support real workflows:
           lead follow-up, HR operations, document intake, structured outputs,
-          human review, and dashboard-based process improvement. Two live
-          working demos are now available: Lead Follow-up Assistant and
-          Recruitment Workflow Assistant.
+          human review, and dashboard-based process improvement. Three live
+          working demos are now available: Lead Follow-up Assistant,
+          Recruitment Workflow Assistant, and Document Intake Assistant.
         </p>
         <p className="mt-4 text-sm font-medium text-slate-400">
           Live site deployed at{" "}
@@ -150,22 +153,40 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="mt-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
-            Future demo ideas
-          </p>
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+            Third live working demo
+          </span>
+          <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">
+                Document Intake Assistant
+              </h2>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+                A manual-AI workflow demo for turning pasted document text into
+                structured summaries, key points, missing information, action
+                items, and human-reviewed next steps.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {documentIntakeFeatures.map((feature) => (
+                  <span
+                    key={feature}
+                    className="rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-300"
+                  >
+                    {feature}
+                  </span>
+                ))}
+              </div>
+            </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {futureDemos.map((demo) => (
-              <InfoCard
-                key={demo.title}
-                title={demo.title}
-                description={demo.description}
-                tag="Planned"
-              />
-            ))}
+            <Link
+              href="/demos/document-intake"
+              className="w-fit shrink-0 rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+            >
+              Open document demo
+            </Link>
           </div>
-        </div>
+        </section>
       </section>
     </main>
   );
