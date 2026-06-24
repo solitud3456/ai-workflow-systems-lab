@@ -1,90 +1,94 @@
 # Roadmap
 
-## Phase 0 — Setup
+## Current State
 
-- Create project folder
-- Create documentation files
-- Create Next.js app
-- Initialize Git
-- Deploy basic site
+- Live site: https://ai-workflow-systems-lab.vercel.app
+- GitHub repository pushed
+- Three working manual-AI workflow demos
+- Public portfolio pages and case studies completed
+- All demos use localStorage, strict JSON paste-back, human review,
+  dashboard metrics, sample JSON helpers, copyable outputs, and delete/reset
+  controls
 
-## Phase 1 — Static Portfolio Site
+## Completed Phases
 
-Pages:
+### Phase 1 — Project Setup and Site Foundation
 
-- Home
-- Demos
-- Methods
-- About
+- Created the Next.js, TypeScript, and Tailwind CSS project
+- Built the homepage, demos, methods, about, and case studies pages
+- Established the honest AI Workflow Systems Lab portfolio positioning
 
-Goal:
+### Phase 2 — Lead Follow-up Assistant
 
-Build a clear portfolio shell before building complex demos.
+- Built lead intake, status tracking, localStorage persistence, dashboard
+  metrics, and demo management
+- Added manual AI prompts, strict JSON analysis, human approval, sample JSON,
+  and copyable suggested replies
 
-## Phase 2 — Lead Follow-up Assistant v0
+### Phase 3 — GitHub and Vercel Deployment
 
-Features:
+- Pushed the repository to GitHub
+- Deployed the live portfolio site to Vercel
 
-- Lead intake form
-- Lead list
-- Lead detail panel
-- Status pipeline
-- Notes
-- Follow-up date
+### Phase 4 — Recruitment Workflow Assistant
 
-No AI yet.
-No database yet.
-Use local React state first.
+- Built candidate intake, screening status tracking, dashboard metrics, and
+  demo management
+- Added manual AI screening, JSON analysis, human approval, sample JSON, and
+  copyable interview questions
 
-## Phase 3 — Lead Assistant Manual AI Mode
+### Phase 5 — Document Intake Assistant
 
-Features:
+- Built document intake, review status tracking, dashboard metrics, and demo
+  management
+- Added manual AI extraction, JSON analysis, human approval, sample JSON, and
+  copyable action items
 
-- Generate prompt from lead data
-- Show JSON schema
-- Paste AI JSON result
-- Parse summary, urgency, reply draft, next action
-- Human approval card
+### Phases 6–7 — Portfolio Polish
 
-No paid API.
+- Polished the homepage and live-demo presentation
+- Added the shared footer and site metadata
+- Added demo comparison and browser-data guidance
+- Added sample JSON helpers across all demos
+- Updated README, case studies, methods, about, and task log
 
-## Phase 4 — Lead Assistant Case Study
+## Next Phases
 
-Write a professional case study:
+### Phase 8 — Reusable Demo Architecture
 
-- Problem
-- Manual workflow before
-- AI-assisted workflow after
-- Data model
-- Prompt/schema design
-- Human review
-- Limitations
-- Future automation
+- Extract shared types, UI patterns, metrics, storage logic, and manual-AI
+  controls
+- Reduce duplication while preserving each workflow's domain-specific content
 
-## Phase 5 — HR / Recruitment Workflow Assistant
+### Phase 9 — Supabase Database Storage
 
-Build after Lead Assistant is finished.
+- Replace localStorage-only persistence with database-backed records
+- Keep local prototypes working until migration behavior is verified
 
-## Phase 6 — Document Intake / Knowledge Assistant
+### Phase 10 — Authentication
 
-Build after HR Assistant is finished.
+- Add user accounts and protected personal data
+- Define ownership and access rules before adding integrations
 
-## Phase 7 — Supabase Upgrade
+### Phase 11 — Real AI API Mode
 
-Only add database after local versions work.
+- Add optional automated AI analysis
+- Preserve strict schemas, visible uncertainty, human review, and approval
+  safeguards before action
 
-## Phase 8 — Testing and Evaluation
+### Phase 12 — Export and Reporting
 
-Create test cases for each workflow.
+- Add practical CSV or report exports
+- Support reviewed workflow summaries and portfolio evaluation data
 
-## Phase 9 — Polish for Job Applications
+### Phase 13 — Document Upload and OCR
 
-Final deliverables:
+- Add file upload and document parsing to the Document Intake Assistant
+- Require human verification for extracted text and AI-generated analysis
 
-- live website
-- GitHub repo
-- three demos
-- three case studies
-- methods page
-- short screen recording
-- CV bullets
+### Phase 14 — Additional Workflow Demos
+
+- Add more workflows only after shared architecture and core upgrades are
+  stable
+- Prioritize support, operations, or internal administration use cases with a
+  clear problem and review process
