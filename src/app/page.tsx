@@ -352,6 +352,14 @@ export default function Home() {
               >
                 Read the method
               </Link>
+              <a
+                href="https://github.com/solitud3456/ai-workflow-systems-lab"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
+              >
+                View GitHub repo
+              </a>
             </div>
           </div>
         </section>
