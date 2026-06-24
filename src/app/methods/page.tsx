@@ -15,7 +15,7 @@ const methods = [
   {
     title: "Human-in-the-loop review",
     description:
-      "Treat AI suggestions as drafts, not final truth. Both live demos track whether saved analysis has been human-reviewed before a reply, interview question, or next step is used.",
+      "Treat AI suggestions as drafts, not final truth. All three live demos track whether saved analysis has been human-reviewed before a reply, interview question, action item, or next step is used.",
   },
   {
     title: "Small persistent prototypes",
@@ -39,12 +39,14 @@ const sharedPattern = [
   "Copyable next-step output",
   "Dashboard metrics",
   "localStorage persistence",
+  "Demo management controls",
 ];
 
 const whyItMatters = [
-  "AI supports the workflow without replacing human judgment.",
-  "AI output becomes structured data that can be saved, reviewed, measured, and reused.",
-  "The workflow can be tested before adding database, authentication, or API complexity.",
+  "AI output is treated as a draft for human verification, not final truth.",
+  "The app turns AI output into structured workflow data that can be saved, reviewed, measured, and reused.",
+  "Each prototype can be tested before adding database, authentication, or API complexity.",
+  "The same pattern can support sales, HR, documents, customer support, operations, and internal admin work.",
 ];
 
 export default function MethodsPage() {
@@ -62,11 +64,12 @@ export default function MethodsPage() {
             Current build method
           </span>
           <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">
-            The method is now proven in two live demos: Lead Follow-up Assistant
-            applies it to customer inquiries, while Recruitment Workflow
-            Assistant applies it to candidate screening. Both use manual AI
-            mode, save structured results locally, and keep a human review step
-            before action.
+            The method is now proven across three workflows. Lead Follow-up
+            Assistant applies it to customer inquiries, Recruitment Workflow
+            Assistant applies it to candidate screening, and Document Intake
+            Assistant applies it to document extraction and review. All three
+            use manual AI mode, save structured results locally, and keep a
+            human review step before action.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -81,6 +84,12 @@ export default function MethodsPage() {
               className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
             >
               Open recruitment demo
+            </Link>
+            <Link
+              href="/demos/document-intake"
+              className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+            >
+              Open document demo
             </Link>
             <Link
               href="/case-studies"
