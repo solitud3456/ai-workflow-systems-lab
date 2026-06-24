@@ -55,6 +55,31 @@ const initialDocuments: IntakeDocument[] = [
   },
 ];
 
+const sampleDocumentAnalysis: DocumentAnalysis = {
+  summary:
+    "The document appears to describe a service request that needs review, missing details, and follow-up action before it can be finalized.",
+  documentType: "Service request or intake note",
+  keyPoints: [
+    "The requester needs help with a specific service or process.",
+    "Some important details are included, but the request is not fully complete.",
+    "A human reviewer should verify the details before taking action.",
+  ],
+  missingInformation: [
+    "Exact deadline or preferred timeline",
+    "Budget or approval requirements",
+    "Responsible contact person",
+  ],
+  actionItems: [
+    "Ask the requester to confirm the missing details.",
+    "Assign the document to the correct reviewer.",
+    "Update the status after the reviewer confirms the next step.",
+  ],
+  riskNote:
+    "The document text may be incomplete, so the AI summary should not be treated as final without human verification.",
+  nextAction:
+    "Contact the requester for missing information and assign the document for review.",
+};
+
 const STORAGE_KEY = "ai-workflow-systems-lab-documents";
 
 function isStringArray(value: unknown): value is string[] {
@@ -302,6 +327,15 @@ Return JSON using this exact shape:
       buildDocumentAnalysisPrompt(document),
     );
     window.alert("Prompt copied. Paste it into ChatGPT or Claude.");
+  }
+
+  async function copySampleJson() {
+    await navigator.clipboard.writeText(
+      JSON.stringify(sampleDocumentAnalysis, null, 2),
+    );
+    window.alert(
+      "Sample JSON copied. Paste it into the AI JSON result box.",
+    );
   }
 
   async function copyActionItems(document: IntakeDocument) {
@@ -658,18 +692,32 @@ Return JSON using this exact shape:
                         className="mt-2 w-full rounded-xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-300 outline-none transition focus:border-cyan-400"
                         placeholder='Paste the AI JSON here, starting with {"summary": ...}'
                       />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          saveDocumentAnalysis(
-                            selectedDocument.id,
-                            analysisJsonByDocumentId[selectedDocument.id] ?? "",
-                          )
-                        }
-                        className="mt-3 rounded-full bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-                      >
-                        Save AI analysis
-                      </button>
+                      <p className="mt-3 text-xs leading-5 text-slate-400">
+                        Testing the demo? Copy sample JSON, paste it below, then
+                        save the analysis.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={copySampleJson}
+                          className="rounded-full border border-cyan-400/40 px-5 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+                        >
+                          Copy sample JSON
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            saveDocumentAnalysis(
+                              selectedDocument.id,
+                              analysisJsonByDocumentId[selectedDocument.id] ??
+                                "",
+                            )
+                          }
+                          className="rounded-full bg-cyan-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                        >
+                          Save AI analysis
+                        </button>
+                      </div>
                     </div>
                   </div>
 
