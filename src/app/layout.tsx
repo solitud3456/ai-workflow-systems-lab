@@ -46,6 +46,51 @@ export default function RootLayout({
           </header>
 
           {children}
+
+          <footer className="border-t border-slate-800 bg-slate-950">
+            <div className="mx-auto flex max-w-6xl flex-col gap-5 px-6 py-8 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold tracking-tight text-white">
+                  AI Workflow Systems Lab
+                </p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Manual-AI workflow prototypes built as a portfolio lab.
+                </p>
+              </div>
+
+              <nav
+                aria-label="Footer navigation"
+                className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-slate-400"
+              >
+                <Link
+                  href="/demos"
+                  className="transition hover:text-cyan-300"
+                >
+                  Demos
+                </Link>
+                <Link
+                  href="/case-studies"
+                  className="transition hover:text-cyan-300"
+                >
+                  Case Studies
+                </Link>
+                <Link
+                  href="/methods"
+                  className="transition hover:text-cyan-300"
+                >
+                  Methods
+                </Link>
+                <a
+                  href="https://github.com/solitud3456/ai-workflow-systems-lab"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:text-cyan-300"
+                >
+                  GitHub
+                </a>
+              </nav>
+            </div>
+          </footer>
         </div>
       </body>
     </html>
