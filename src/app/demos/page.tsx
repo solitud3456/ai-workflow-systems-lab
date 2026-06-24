@@ -39,6 +39,39 @@ const documentIntakeFeatures = [
   "Demo management controls",
 ];
 
+const demoProof = [
+  {
+    title: "Lead Follow-up Assistant",
+    points: [
+      "Messy customer inquiry intake",
+      "Lead status tracking",
+      "Manual AI follow-up prompt",
+      "JSON analysis saving",
+      "Human-reviewed suggested replies",
+    ],
+  },
+  {
+    title: "Recruitment Workflow Assistant",
+    points: [
+      "Candidate intake",
+      "Screening workflow",
+      "Structured AI evaluation",
+      "Interview question generation",
+      "Human-reviewed hiring support",
+    ],
+  },
+  {
+    title: "Document Intake Assistant",
+    points: [
+      "Messy document intake",
+      "Structured extraction",
+      "Missing information detection",
+      "Action item generation",
+      "Human-reviewed document handling",
+    ],
+  },
+];
+
 export default function DemosPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
@@ -172,6 +205,50 @@ export default function DemosPage() {
               Open document demo
             </Link>
           </div>
+        </section>
+
+        <section className="mt-14 border-t border-slate-800 pt-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-400">
+            Portfolio proof
+          </p>
+          <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="text-3xl font-semibold tracking-tight text-white">
+              What each demo proves
+            </h2>
+            <p className="max-w-xl text-sm leading-6 text-slate-400">
+              Each prototype applies the same manual-AI workflow to a different
+              business process, showing reusable system thinking rather than
+              isolated AI features.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-8 lg:grid-cols-3">
+            {demoProof.map((demo) => (
+              <article
+                key={demo.title}
+                className="border-l border-slate-700 pl-5"
+              >
+                <h3 className="text-lg font-semibold text-white">
+                  {demo.title}
+                </h3>
+                <ul className="mt-4 space-y-3">
+                  {demo.points.map((point) => (
+                    <li
+                      key={point}
+                      className="text-sm leading-6 text-slate-400"
+                    >
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+
+          <p className="mt-10 border-y border-cyan-500/20 py-5 text-center text-sm font-medium leading-6 text-cyan-200">
+            Intake &rarr; Status tracking &rarr; AI prompt &rarr; JSON result
+            &rarr; Human review &rarr; Copyable output &rarr; Metrics
+          </p>
         </section>
       </section>
     </main>
