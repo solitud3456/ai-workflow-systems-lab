@@ -37,10 +37,12 @@ export default function AboutPage() {
             AI assistance, saving useful state, and documenting the limits.
           </p>
           <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
-            The lab now has two working demos. Lead Follow-up Assistant explores
-            customer inquiry and follow-up workflows. Recruitment Workflow
-            Assistant applies the same practical method to candidate screening,
-            interview preparation, and human-reviewed recruiter next steps.
+            The lab now has three working demos. Lead Follow-up Assistant
+            explores customer inquiry and follow-up workflows. Recruitment
+            Workflow Assistant applies the same practical method to candidate
+            screening and interview preparation. Document Intake Assistant
+            focuses on document extraction, review, action items, and
+            human-reviewed next steps.
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -55,6 +57,12 @@ export default function AboutPage() {
               className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
             >
               Open recruitment demo
+            </Link>
+            <Link
+              href="/demos/document-intake"
+              className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+            >
+              Open document demo
             </Link>
             <Link
               href="/demos"
