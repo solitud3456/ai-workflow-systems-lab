@@ -316,6 +316,45 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <section className="mt-14 border-y border-cyan-500/20 py-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-400">
+                Explore the lab
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+                Explore the live workflow demos
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
+                The best way to understand the project is to open the demos and
+                test the manual prompt, pasted JSON, human review, and saved
+                workflow for yourself.
+              </p>
+            </div>
+
+            <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
+              <Link
+                href="/demos"
+                className="rounded-full bg-cyan-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+              >
+                View all demos
+              </Link>
+              <Link
+                href="/case-studies"
+                className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
+              >
+                Read case studies
+              </Link>
+              <Link
+                href="/methods"
+                className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
+              >
+                Read the method
+              </Link>
+            </div>
+          </div>
+        </section>
       </section>
     </main>
   );
