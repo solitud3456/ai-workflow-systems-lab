@@ -1,6 +1,5 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
-import InfoCard from "@/components/InfoCard";
 
 const workflowSteps = [
   "Capture a messy customer inquiry as a structured lead record.",
@@ -67,15 +66,37 @@ const recruitmentNextUpgrades = [
   "Automated AI API mode with explicit review controls before action.",
 ];
 
-const plannedCaseStudies = [
-  {
-    title: "Document Intake Assistant",
-    status: "Planned",
-    problem:
-      "Teams often receive messy documents and need summaries, extracted fields, checklists, and source-grounded review.",
-    proof:
-      "This case study will show document processing with source snippets, uncertainty warnings, and human approval.",
-  },
+const documentWorkflowSteps = [
+  "Capture the document title, type, source, pasted text, and internal review notes.",
+  "Track each document through New, Reviewing, Needs info, Approved, or Archived status.",
+  "Generate a structured manual AI extraction prompt for the selected document.",
+  "Paste the AI JSON document analysis back into the app.",
+  "Save the summary, key points, missing information, action items, risk note, and next action.",
+  "Review the saved analysis and explicitly mark it as human-reviewed.",
+  "Copy the action items for practical document follow-up.",
+];
+
+const documentValuePoints = [
+  "AI-assisted document workflow design instead of an isolated summarization prompt.",
+  "Structured extraction that separates key points, missing information, action items, and uncertainty.",
+  "Human-in-the-loop review so AI output remains evidence to verify rather than final truth.",
+  "Dashboard metrics for document status, saved analyses, and completed human review.",
+  "Practical document handling that can be tested before adding file-processing infrastructure.",
+];
+
+const documentLimitations = [
+  "Manual AI mode only: the user copies the prompt into ChatGPT or Claude and pastes the JSON result back.",
+  "LocalStorage only: document records stay in one browser and are not suitable for shared or sensitive production data.",
+  "No real database, authentication, file upload, OCR, document parsing, or live AI API yet.",
+];
+
+const documentNextUpgrades = [
+  "Database storage for document records, analyses, and review history.",
+  "Authentication and private workspaces.",
+  "File upload for common document formats.",
+  "OCR and document parsing for scanned files and structured extraction.",
+  "Export and reporting for document queues, actions, and review status.",
+  "Automated AI API mode with explicit review controls before action.",
 ];
 
 export default function CaseStudiesPage() {
@@ -283,16 +304,105 @@ export default function CaseStudiesPage() {
           </div>
         </article>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {plannedCaseStudies.map((study) => (
-            <InfoCard
-              key={study.title}
-              title={study.title}
-              tag={study.status}
-              description={`${study.problem} Portfolio proof: ${study.proof}`}
-            />
-          ))}
-        </div>
+        <article className="mt-16">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+                  Portfolio lab case study
+                </span>
+                <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white">
+                  Document Intake Assistant
+                </h2>
+                <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
+                  This demo explores how pasted document text can move from an
+                  unstructured source into a saved summary, key points, missing
+                  information, action items, and human-reviewed next steps. It
+                  demonstrates document assistance without presenting AI output
+                  as verified fact or a replacement for human review.
+                </p>
+              </div>
+
+              <Link
+                href="/demos/document-intake"
+                className="w-fit rounded-full border border-cyan-400/60 px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+              >
+                Open document demo
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">Problem</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                Businesses often receive messy document text from forms,
+                emails, reports, notes, policies, requests, and copied
+                documents. Important details can be buried in free text,
+                missing information may go unnoticed, and follow-up actions can
+                remain unclear without a consistent review workflow.
+              </p>
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">
+                Why it matters
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {documentValuePoints.map((point) => (
+                  <li key={point} className="text-sm leading-6 text-slate-400">
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+
+          <section className="mt-8">
+            <h3 className="text-lg font-semibold text-white">Workflow</h3>
+            <ol className="mt-4 grid gap-3 md:grid-cols-2">
+              {documentWorkflowSteps.map((step, index) => (
+                <li
+                  key={step}
+                  className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm leading-6 text-slate-300"
+                >
+                  <span className="mr-2 font-semibold text-cyan-300">
+                    {index + 1}.
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">
+                Current limitation
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {documentLimitations.map((item) => (
+                  <li key={item} className="text-sm leading-6 text-slate-400">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">
+                Next upgrades
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {documentNextUpgrades.map((item) => (
+                  <li key={item} className="text-sm leading-6 text-slate-400">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        </article>
       </section>
     </main>
   );
