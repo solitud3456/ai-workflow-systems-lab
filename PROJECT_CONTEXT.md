@@ -1,109 +1,98 @@
 # AI Workflow Systems Lab
 
-## One-sentence purpose
+## Project purpose
 
-AI Workflow Systems Lab is a solo-built portfolio project that demonstrates how AI can be applied to real business workflows through dashboards, structured outputs, human review, and practical automation thinking.
+AI Workflow Systems Lab is a solo-built portfolio lab for designing and
+building practical AI-assisted workflow prototypes. It demonstrates workflow
+thinking, structured AI outputs, human review, dashboard interfaces, and
+honest documentation.
 
-## What this project is
+This is not an agency and does not claim real clients or production business
+results.
 
-This is not a fake agency pretending to have clients.
+## Project links
 
-This is a portfolio lab showing working AI-assisted workflow demos, case studies, and methods.
+- Live site: https://ai-workflow-systems-lab.vercel.app
+- GitHub: https://github.com/solitud3456/ai-workflow-systems-lab
 
-The goal is to prove ability for future jobs or internships related to:
-
-- AI tool utilization
-- workflow automation
-- business process improvement
-- AI-assisted internal tools
-- operations automation
-- junior solution consulting
-- technical project coordination
-- AI product building
-
-## Main portfolio demos
-
-The project will eventually contain three demos:
+## Current live demos
 
 1. Lead Follow-up Assistant
-2. HR / Recruitment Workflow Assistant
-3. Document Intake / Knowledge Assistant
+2. Recruitment Workflow Assistant
+3. Document Intake Assistant
 
-The first demo to build is:
+Each demo applies the same repeatable pattern to a different workflow:
 
-Lead Follow-up Assistant
+1. capture messy input
+2. track status
+3. generate a manual AI prompt
+4. request strict JSON output
+5. paste and save the AI analysis
+6. require human review and approval
+7. copy the practical final output
+8. monitor dashboard metrics
 
-## Core philosophy
+## Shared demo features
 
-AI is not valuable because it writes text.
+All three demos currently include:
 
-AI becomes valuable when it is connected to a workflow.
+- localStorage persistence
+- manual AI prompt generation
+- strict JSON paste-back workflow
+- saved AI analysis
+- human review approval
+- copy prompt
+- copy sample JSON for quick testing
+- copy final output
+- dashboard metrics
+- delete and reset demo controls
 
-Every demo should show:
+The demos are browser-based prototypes. There is no database, authentication,
+account system, or live AI API integration yet.
 
-1. messy input
-2. structured record
-3. dashboard/interface
-4. AI-assisted output
-5. human review
-6. saved status
-7. limitations/safety notes
-8. business value
+## Public portfolio pages
 
-## Budget constraint
+The project includes updated:
 
-The project should work without paid API usage at first.
+- homepage
+- demos page
+- case studies
+- methods page
+- about page
+- README
 
-Current available tools:
-
-- ChatGPT Plus
-- Claude Pro / Claude Code
-- free GitHub
-- free Vercel
-- free Supabase later
-
-Version 1 should use manual AI mode:
-
-The app generates a prompt and JSON schema.
-The user copies it into ChatGPT/Claude.
-The user pastes the AI JSON output back into the app.
-The app parses and displays the result.
-
-Do not pretend AI is live if it is not live.
-
-## Tech stack
-
-Use:
+## Current technology
 
 - Next.js
 - TypeScript
 - Tailwind CSS
-- GitHub
+- localStorage
+- Git and GitHub
 - Vercel
-- LocalStorage first
-- Supabase later
 
-Optional later:
+## Development priority
 
-- Supabase database
-- Supabase auth
-- n8n
-- OpenAI API
-- Claude API
-- local model
-- automation integrations
+Do not add many more demos yet. The next priority is reusable components and
+architecture cleanup across the three existing demos, including shared UI,
+storage, metrics, and manual-AI workflow patterns.
 
-## What not to do
+## Future upgrades
 
-Do not:
+After cleanup:
 
-- build a fake company
-- pretend to have real clients
-- claim AI can do everything
-- build 10 random apps
-- add paid APIs too early
-- overcomplicate authentication
-- add too many libraries
-- let Claude Code rewrite the whole project
-- skip case studies
-- skip limitations and safety notes
+1. Supabase or other database storage
+2. authentication and record ownership
+3. real AI API mode with strict schemas and human-review safeguards
+4. export and reporting
+5. file upload, parsing, and OCR for the Document Intake Assistant
+6. additional workflow demos only when the shared architecture is stable
+
+## Project guardrails
+
+- Keep claims honest and portfolio-focused.
+- Do not use fake agency or fake client language.
+- Do not imply AI is live when the workflow is manual.
+- Treat AI output as assistance, not final truth.
+- Preserve human review before action.
+- Avoid unnecessary libraries and premature backend complexity.
+- Keep limitations and next upgrades visible.
