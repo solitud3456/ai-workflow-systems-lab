@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import DemoPanel from "@/components/demo/DemoPanel";
 import EmptyState from "@/components/demo/EmptyState";
 import MetricCard from "@/components/demo/MetricCard";
 import ReviewStatusBadge from "@/components/demo/ReviewStatusBadge";
@@ -347,7 +348,7 @@ Return JSON using this exact shape:
         />
 
         <div className="mt-10 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+          <DemoPanel>
             <h2 className="text-2xl font-semibold text-white">
               Candidate intake
             </h2>
@@ -444,9 +445,9 @@ Return JSON using this exact shape:
                 Create candidate record
               </button>
             </form>
-          </section>
+          </DemoPanel>
 
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+          <DemoPanel>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-white">
@@ -810,7 +811,7 @@ Return JSON using this exact shape:
                 />
               )}
             </div>
-          </section>
+          </DemoPanel>
         </div>
       </section>
     </main>
