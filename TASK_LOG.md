@@ -64,3 +64,33 @@ Current state:
 
 The manual-AI, localStorage portfolio baseline is complete and ready for
 future database, authentication, integration, and live AI API upgrades.
+
+## 2026-06-25
+
+Completed the first shared-component cleanup checkpoint.
+
+Extracted reusable demo UI into `src/components/demo`:
+
+- MetricCard
+- ReviewStatusBadge
+- EmptyState
+- DemoPanel
+- CopyableOutputBox
+- DashboardHeader
+- AnalysisReviewCard
+- StatusSelect
+
+The Lead Follow-up Assistant, Recruitment Workflow Assistant, and Document
+Intake Assistant continue to work after the refactor.
+
+Also fixed the Lead Follow-up localStorage hydration race so saved changes
+persist reliably after refresh.
+
+Verification:
+
+- `npm run lint` passed
+- `npm run build` passed
+- live testing passed after the refactor
+
+`ManualAiPanel` was intentionally not extracted yet because it would touch the
+higher-risk prompt, sample JSON, and save-analysis workflow.
