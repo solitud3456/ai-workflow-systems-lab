@@ -106,6 +106,21 @@ This lab uses a workflow-first development method:
 - export/reporting
 - more workflow demos
 
+## Future Supabase Setup
+
+The current demos still use localStorage. The optional client in
+`src/lib/supabaseClient.ts` and the draft `supabase/schema.sql` file are
+foundation only and are not connected to the demo workflows yet.
+
+To prepare Supabase later:
+
+1. Create a Supabase project.
+2. Copy `.env.example` to `.env.local`.
+3. Fill in `NEXT_PUBLIC_SUPABASE_URL` and
+   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+4. Run the draft schema in the Supabase SQL editor when database integration
+   work begins.
+
 ## Local Development
 
 Install dependencies:
