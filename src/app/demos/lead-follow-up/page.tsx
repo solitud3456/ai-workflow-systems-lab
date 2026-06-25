@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import CopyableOutputBox from "@/components/demo/CopyableOutputBox";
 import DemoPanel from "@/components/demo/DemoPanel";
 import EmptyState from "@/components/demo/EmptyState";
 import MetricCard from "@/components/demo/MetricCard";
@@ -643,23 +644,15 @@ Return JSON using this exact shape:
                           </p>
                         </div>
 
-                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                              Suggested reply
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => copySuggestedReply(selectedLead)}
-                              className="w-fit rounded-full border border-cyan-400/40 px-4 py-2 text-xs font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
-                            >
-                              Copy suggested reply
-                            </button>
-                          </div>
+                        <CopyableOutputBox
+                          title="Suggested reply"
+                          buttonLabel="Copy suggested reply"
+                          onCopy={() => copySuggestedReply(selectedLead)}
+                        >
                           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">
                             {selectedLead.analysis.suggestedReply}
                           </p>
-                        </div>
+                        </CopyableOutputBox>
                       </div>
 
                       <button
