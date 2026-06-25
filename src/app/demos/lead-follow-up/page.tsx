@@ -8,6 +8,7 @@ import DashboardHeader from "@/components/demo/DashboardHeader";
 import DemoPanel from "@/components/demo/DemoPanel";
 import EmptyState from "@/components/demo/EmptyState";
 import MetricCard from "@/components/demo/MetricCard";
+import StatusSelect from "@/components/demo/StatusSelect";
 
 type LeadStatus = "New" | "Contacted" | "Waiting" | "Booked" | "Lost";
 
@@ -456,25 +457,14 @@ Return JSON using this exact shape:
                     </p>
                   </div>
 
-                  <div className="mt-5">
-                    <label className="text-sm font-medium text-slate-300" htmlFor="status">
-                      Status
-                    </label>
-                    <select
-                      id="status"
-                      value={selectedLead.status}
-                      onChange={(event) =>
-                        updateLeadStatus(selectedLead.id, event.target.value as LeadStatus)
-                      }
-                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400"
-                    >
-                      {statusOptions.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <StatusSelect
+                    label="Status"
+                    value={selectedLead.status}
+                    options={statusOptions}
+                    onChange={(status) =>
+                      updateLeadStatus(selectedLead.id, status)
+                    }
+                  />
 
                   <div className="mt-5">
                     <p className="text-sm font-medium text-slate-300">Follow-up date</p>

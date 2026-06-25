@@ -8,6 +8,7 @@ import DashboardHeader from "@/components/demo/DashboardHeader";
 import DemoPanel from "@/components/demo/DemoPanel";
 import EmptyState from "@/components/demo/EmptyState";
 import MetricCard from "@/components/demo/MetricCard";
+import StatusSelect from "@/components/demo/StatusSelect";
 
 type DocumentStatus =
   | "New"
@@ -563,31 +564,14 @@ Return JSON using this exact shape:
                     </p>
                   </div>
 
-                  <div className="mt-5">
-                    <label
-                      className="text-sm font-medium text-slate-300"
-                      htmlFor="documentStatus"
-                    >
-                      Status
-                    </label>
-                    <select
-                      id="documentStatus"
-                      value={selectedDocument.status}
-                      onChange={(event) =>
-                        updateDocumentStatus(
-                          selectedDocument.id,
-                          event.target.value as DocumentStatus,
-                        )
-                      }
-                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400"
-                    >
-                      {statusOptions.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <StatusSelect
+                    label="Status"
+                    value={selectedDocument.status}
+                    options={statusOptions}
+                    onChange={(status) =>
+                      updateDocumentStatus(selectedDocument.id, status)
+                    }
+                  />
 
                   <div className="mt-5">
                     <label
