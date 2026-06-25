@@ -20,6 +20,26 @@ All demos currently use localStorage, manual AI prompts, strict JSON
 paste-back, saved analysis, human review, sample JSON helpers, copyable final
 outputs, dashboard metrics, and delete/reset controls.
 
+## Shared demo components
+
+When editing the three demo pages, reuse the components in
+`src/components/demo`:
+
+- MetricCard
+- ReviewStatusBadge
+- EmptyState
+- DemoPanel
+- CopyableOutputBox
+- DashboardHeader
+- AnalysisReviewCard
+- StatusSelect
+
+Keep each demo's record and analysis types, prompts, sample JSON, runtime
+validators, and analysis layouts inside its page for now.
+
+`ManualAiPanel` has not been extracted. Do not extract it unless explicitly
+requested. Do not create a giant generic `WorkflowDemo` abstraction.
+
 ## Project rules
 
 - Preserve the honest portfolio-lab positioning.
@@ -30,7 +50,7 @@ outputs, dashboard metrics, and delete/reset controls.
 - Modify only the files requested by the user.
 - Keep TypeScript clean and do not add unnecessary libraries.
 - Preserve the existing dark/cyan visual style.
-- Before adding a fourth demo, prefer extracting reusable components,
-  storage logic, metrics, and manual-AI patterns from the three existing
+- Keep refactors small and incremental, and test changes across all three
   demos.
-- After code changes, run or recommend `npm run lint` and `npm run build`.
+- After changing demo components or demo pages, run `npm run lint` and
+  `npm run build`.
