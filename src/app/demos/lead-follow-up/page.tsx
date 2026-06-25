@@ -2,12 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import AnalysisReviewCard from "@/components/demo/AnalysisReviewCard";
 import CopyableOutputBox from "@/components/demo/CopyableOutputBox";
 import DashboardHeader from "@/components/demo/DashboardHeader";
 import DemoPanel from "@/components/demo/DemoPanel";
 import EmptyState from "@/components/demo/EmptyState";
 import MetricCard from "@/components/demo/MetricCard";
-import ReviewStatusBadge from "@/components/demo/ReviewStatusBadge";
 
 type LeadStatus = "New" | "Contacted" | "Waiting" | "Booked" | "Lost";
 
@@ -575,16 +575,12 @@ Return JSON using this exact shape:
                   </div>
 
                   {selectedLead.analysis ? (
-                    <div className="mt-5 rounded-xl border border-cyan-500/20 bg-slate-900/80 p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-sm font-semibold text-cyan-200">
-                          Saved AI analysis
-                        </p>
-                        <ReviewStatusBadge
-                          approved={selectedLead.analysisApproved}
-                        />
-                      </div>
-
+                    <AnalysisReviewCard
+                      approved={selectedLead.analysisApproved}
+                      onApprove={() =>
+                        approveLeadAnalysis(selectedLead.id)
+                      }
+                    >
                       <div className="mt-4 space-y-4">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -642,15 +638,7 @@ Return JSON using this exact shape:
                           </p>
                         </CopyableOutputBox>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => approveLeadAnalysis(selectedLead.id)}
-                        className="mt-4 rounded-full border border-cyan-400/40 px-5 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
-                      >
-                        Mark as human-reviewed
-                      </button>
-                    </div>
+                    </AnalysisReviewCard>
                   ) : null}
                 </div>
               ) : (
