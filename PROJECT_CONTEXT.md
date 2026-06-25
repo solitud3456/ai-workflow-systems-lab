@@ -50,6 +50,32 @@ All three demos currently include:
 The demos are browser-based prototypes. There is no database, authentication,
 account system, or live AI API integration yet.
 
+## Shared demo architecture
+
+The three demo pages now share these presentational components from
+`src/components/demo`:
+
+- MetricCard
+- ReviewStatusBadge
+- EmptyState
+- DemoPanel
+- CopyableOutputBox
+- DashboardHeader
+- AnalysisReviewCard
+- StatusSelect
+
+Each demo still owns its domain-specific record and analysis types, status
+values, prompts, sample JSON, runtime validators, intake fields, and analysis
+layout.
+
+`ManualAiPanel` has not been extracted. That workflow combines prompt display,
+sample JSON, draft state, validation, and save behavior, so any future
+extraction should be approached carefully.
+
+The Lead Follow-up Assistant localStorage hydration race was fixed with a
+storage-ready guard, preventing default data from overwriting stored leads
+during initial loading.
+
 ## Public portfolio pages
 
 The project includes updated:
@@ -72,9 +98,13 @@ The project includes updated:
 
 ## Development priority
 
-Do not add many more demos yet. The next priority is reusable components and
-architecture cleanup across the three existing demos, including shared UI,
-storage, metrics, and manual-AI workflow patterns.
+Do not add many more demos yet. Continue cleanup conservatively:
+
+1. consider `ManualAiPanel` only after defining a small, behavior-preserving
+   boundary
+2. consider a validated localStorage hook later
+3. avoid a giant generic `WorkflowDemo` abstraction for now
+4. keep domain-specific types and workflow content easy to read in each page
 
 ## Future upgrades
 
