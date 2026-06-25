@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 import CopyableOutputBox from "@/components/demo/CopyableOutputBox";
+import DashboardHeader from "@/components/demo/DashboardHeader";
 import DemoPanel from "@/components/demo/DemoPanel";
 import EmptyState from "@/components/demo/EmptyState";
 import MetricCard from "@/components/demo/MetricCard";
@@ -449,31 +450,13 @@ Return JSON using this exact shape:
           </DemoPanel>
 
           <DemoPanel>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-white">
-                  Candidate dashboard
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Track each candidate from intake through a human-reviewed
-                  next step.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={resetDemoData}
-                  className="w-fit rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:border-cyan-400/60 hover:text-cyan-200"
-                >
-                  Reset demo data
-                </button>
-                <span className="w-fit rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-                  {candidates.length} candidate
-                  {candidates.length === 1 ? "" : "s"}
-                </span>
-              </div>
-            </div>
+            <DashboardHeader
+              title="Candidate dashboard"
+              description="Track each candidate from intake through a human-reviewed next step."
+              countLabel={`${candidates.length} candidate${candidates.length === 1 ? "" : "s"}`}
+              resetButtonLabel="Reset demo data"
+              onReset={resetDemoData}
+            />
 
             <div className="mt-6 grid gap-3 sm:grid-cols-5">
               {statusCounts.map((item) => (
