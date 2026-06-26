@@ -9,6 +9,7 @@ import DemoPanel from "@/components/demo/DemoPanel";
 import EmptyState from "@/components/demo/EmptyState";
 import MetricCard from "@/components/demo/MetricCard";
 import StatusSelect from "@/components/demo/StatusSelect";
+import { supabaseClient } from "@/lib/supabaseClient";
 
 type LeadStatus = "New" | "Contacted" | "Waiting" | "Booked" | "Lost";
 
@@ -31,6 +32,22 @@ type Lead = {
   notes: string;
   analysis?: LeadAnalysis;
   analysisApproved: boolean;
+};
+
+type SupabaseSyncMessage = {
+  type: "success" | "error";
+  text: string;
+};
+
+type LeadDemoRecordRow = {
+  id: string;
+  title: string | null;
+  status: string | null;
+  source: string | null;
+  raw_input: string | null;
+  internal_notes: string | null;
+  analysis: unknown;
+  analysis_approved: boolean | null;
 };
 
 const statusOptions: LeadStatus[] = [
@@ -70,6 +87,141 @@ const sampleLeadAnalysis: LeadAnalysis = {
 };
 
 const STORAGE_KEY = "ai-workflow-systems-lab-leads";
+const LEAD_DEMO_TYPE = "lead_follow_up";
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function getNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function isLeadStatus(value: unknown): value is LeadStatus {
+  return (
+    typeof value === "string" &&
+    statusOptions.some((status) => status === value)
+  );
+}
+
+function isLeadAnalysis(value: unknown): value is LeadAnalysis {
+  if (!isObjectRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.summary === "string" &&
+    (value.urgency === "low" ||
+      value.urgency === "medium" ||
+      value.urgency === "high") &&
+    typeof value.customerIntent === "string" &&
+    typeof value.suggestedReply === "string" &&
+    typeof value.nextAction === "string" &&
+    typeof value.riskNote === "string"
+  );
+}
+
+function parseLeadRawInput(rawInput: string | null): Record<string, unknown> {
+  if (!rawInput) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(rawInput) as unknown;
+    return isObjectRecord(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function buildLeadTitle(lead: Lead) {
+  return lead.name || lead.source || "Untitled lead";
+}
+
+function mapLeadToDemoRecord(lead: Lead) {
+  return {
+    demo_type: LEAD_DEMO_TYPE,
+    title: buildLeadTitle(lead),
+    status: lead.status,
+    source: lead.source,
+    raw_input: JSON.stringify({
+      id: lead.id,
+      name: lead.name,
+      source: lead.source,
+      message: lead.message,
+      status: lead.status,
+      followUpDate: lead.followUpDate,
+      notes: lead.notes,
+    }),
+    internal_notes: lead.notes,
+    analysis: lead.analysis ?? null,
+    analysis_approved: lead.analysisApproved,
+  };
+}
+
+function buildFallbackLeadId(index: number) {
+  return Date.now() + index;
+}
+
+function mapDemoRecordToLead(
+  record: LeadDemoRecordRow,
+  index: number,
+  usedIds: Set<number>,
+): Lead {
+  const rawLead = parseLeadRawInput(record.raw_input);
+  const rawId = getNumber(rawLead.id);
+  let id = rawId ?? buildFallbackLeadId(index);
+
+  while (usedIds.has(id)) {
+    id += 1;
+  }
+
+  usedIds.add(id);
+
+  const analysis = isLeadAnalysis(record.analysis)
+    ? record.analysis
+    : undefined;
+  const status = isLeadStatus(record.status)
+    ? record.status
+    : isLeadStatus(rawLead.status)
+      ? rawLead.status
+      : "New";
+
+  return {
+    id,
+    name:
+      getString(rawLead.name) ||
+      record.title ||
+      getString(rawLead.source) ||
+      "Supabase lead",
+    source:
+      getString(rawLead.source) || record.source || "Supabase demo_records",
+    message: getString(rawLead.message) || "",
+    status,
+    followUpDate: getString(rawLead.followUpDate) || "",
+    notes: record.internal_notes || getString(rawLead.notes) || "",
+    analysis,
+    analysisApproved: Boolean(record.analysis_approved && analysis),
+  };
+}
+
+function getSupabaseErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (isObjectRecord(error) && typeof error.message === "string") {
+    return error.message;
+  }
+
+  return "Unknown Supabase error.";
+}
 
 export default function LeadFollowUpPage() {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
@@ -78,6 +230,9 @@ export default function LeadFollowUpPage() {
     Record<number, string>
   >({});
   const [storageReady, setStorageReady] = useState(false);
+  const [supabaseSyncMessage, setSupabaseSyncMessage] =
+    useState<SupabaseSyncMessage | null>(null);
+  const [isSupabaseSyncing, setIsSupabaseSyncing] = useState(false);
 
   useEffect(() => {
     const savedLeads = window.localStorage.getItem(STORAGE_KEY);
@@ -277,6 +432,130 @@ Return JSON using this exact shape:
     window.alert("Suggested reply copied.");
   }
 
+  async function saveCurrentLeadsToSupabase() {
+    if (!storageReady) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Local lead data is still loading. Try again in a moment.",
+      });
+      return;
+    }
+
+    if (!supabaseClient) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Supabase is not configured in this build. localStorage is still working.",
+      });
+      return;
+    }
+
+    if (leads.length === 0) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "There are no leads to save to Supabase yet.",
+      });
+      return;
+    }
+
+    setIsSupabaseSyncing(true);
+    setSupabaseSyncMessage(null);
+
+    try {
+      const { error } = await supabaseClient
+        .from("demo_records")
+        .insert(leads.map(mapLeadToDemoRecord));
+
+      if (error) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: `Supabase save failed: ${error.message}. localStorage data was not changed.`,
+        });
+        return;
+      }
+
+      setSupabaseSyncMessage({
+        type: "success",
+        text: `Saved ${leads.length} lead${leads.length === 1 ? "" : "s"} to Supabase. localStorage remains the main working storage.`,
+      });
+    } catch (error) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: `Supabase save failed: ${getSupabaseErrorMessage(error)}. localStorage data was not changed.`,
+      });
+    } finally {
+      setIsSupabaseSyncing(false);
+    }
+  }
+
+  async function loadLeadsFromSupabase() {
+    if (!storageReady) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Local lead data is still loading. Try again in a moment.",
+      });
+      return;
+    }
+
+    if (!supabaseClient) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Supabase is not configured in this build. localStorage is still working.",
+      });
+      return;
+    }
+
+    setIsSupabaseSyncing(true);
+    setSupabaseSyncMessage(null);
+
+    try {
+      const { data, error } = await supabaseClient
+        .from("demo_records")
+        .select(
+          "id, title, status, source, raw_input, internal_notes, analysis, analysis_approved",
+        )
+        .eq("demo_type", LEAD_DEMO_TYPE)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: `Supabase load failed: ${error.message}. Current localStorage leads were not changed.`,
+        });
+        return;
+      }
+
+      const records = (data ?? []) as LeadDemoRecordRow[];
+
+      if (records.length === 0) {
+        setSupabaseSyncMessage({
+          type: "success",
+          text: "No lead records were found in Supabase. Current localStorage leads were not changed.",
+        });
+        return;
+      }
+
+      const usedIds = new Set<number>();
+      const loadedLeads = records.map((record, index) =>
+        mapDemoRecordToLead(record, index, usedIds),
+      );
+
+      setLeads(loadedLeads);
+      setSelectedLeadId(loadedLeads[0]?.id ?? null);
+      setAnalysisJsonByLeadId({});
+      setSupabaseSyncMessage({
+        type: "success",
+        text: `Loaded ${loadedLeads.length} lead${loadedLeads.length === 1 ? "" : "s"} from Supabase into the local demo state.`,
+      });
+    } catch (error) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: `Supabase load failed: ${getSupabaseErrorMessage(error)}. Current localStorage leads were not changed.`,
+      });
+    } finally {
+      setIsSupabaseSyncing(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
       <section className="mx-auto max-w-7xl">
@@ -395,6 +674,52 @@ Return JSON using this exact shape:
                 label="Human-reviewed analyses"
                 value={reviewedCount}
               />
+            </div>
+
+            <div className="mt-6 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-cyan-200">
+                    Optional Supabase sync
+                  </p>
+                  <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-400">
+                    localStorage is still the main working storage for this
+                    demo. These buttons are only for development verification
+                    against the optional Supabase demo_records table.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={saveCurrentLeadsToSupabase}
+                    disabled={isSupabaseSyncing}
+                    className="rounded-full border border-cyan-400/60 px-4 py-2 text-xs font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Save current leads to Supabase
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loadLeadsFromSupabase}
+                    disabled={isSupabaseSyncing}
+                    className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Load leads from Supabase
+                  </button>
+                </div>
+              </div>
+
+              {supabaseSyncMessage ? (
+                <p
+                  className={`mt-4 rounded-xl border px-4 py-3 text-xs leading-5 ${
+                    supabaseSyncMessage.type === "success"
+                      ? "border-emerald-500/20 bg-slate-950/60 text-emerald-200"
+                      : "border-amber-500/20 bg-slate-950/60 text-amber-200"
+                  }`}
+                >
+                  {supabaseSyncMessage.text}
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
