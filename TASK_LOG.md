@@ -104,3 +104,12 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Verified `public.demo_records` exists.
 - Verified Row Level Security is enabled.
 - No demos are wired to Supabase yet; current demos still use localStorage.
+
+## Optional Supabase sync added to Lead demo
+
+- Added optional Supabase sync UI to `/demos/lead-follow-up`.
+- Kept localStorage as the main working storage.
+- Added save/load controls for development verification.
+- Confirmed Supabase write is currently blocked by Row Level Security.
+- Confirmed the page handles the RLS error without crashing.
+- Recruitment and Document Intake demos were not changed.
