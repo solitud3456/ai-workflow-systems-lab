@@ -94,3 +94,13 @@ Verification:
 
 `ManualAiPanel` was intentionally not extracted yet because it would touch the
 higher-risk prompt, sample JSON, and save-analysis workflow.
+
+## Supabase schema applied
+
+- Created Supabase project.
+- Added local `.env.local` with Supabase URL and publishable key.
+- Confirmed `.env.local` is ignored by Git.
+- Ran `supabase/schema.sql` manually in Supabase SQL Editor.
+- Verified `public.demo_records` exists.
+- Verified Row Level Security is enabled.
+- No demos are wired to Supabase yet; current demos still use localStorage.
