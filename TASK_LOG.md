@@ -122,3 +122,12 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Kept localStorage as the main working storage.
 - Avoided exposing Supabase service role key in client code.
 - Recruitment and Document Intake demos were not changed.
+
+## Vercel Supabase environment configured
+
+- Added Supabase environment variables to Vercel.
+- Added `NEXT_PUBLIC_SUPABASE_URL`.
+- Added `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- Added server-only `SUPABASE_SERVICE_ROLE_KEY`.
+- Redeployed the latest production build.
+- Confirmed live Lead Follow-up Supabase sync can use the internal API route.
