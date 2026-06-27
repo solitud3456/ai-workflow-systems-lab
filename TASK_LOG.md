@@ -131,3 +131,12 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Added server-only `SUPABASE_SERVICE_ROLE_KEY`.
 - Redeployed the latest production build.
 - Confirmed live Lead Follow-up Supabase sync can use the internal API route.
+
+## Lead Supabase sync UX polished
+
+- Polished the optional Supabase sync section on `/demos/lead-follow-up`.
+- Clarified that localStorage remains the main demo workspace.
+- Clarified that Supabase sync is optional database persistence.
+- Added safer load behavior because loading from Supabase replaces local demo state.
+- Added validation so obviously invalid lead names are not saved to Supabase.
+- Confirmed production `/api/lead-records` returns a clean Lead Follow-up record.
