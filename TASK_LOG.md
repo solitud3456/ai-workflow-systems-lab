@@ -113,3 +113,12 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Confirmed Supabase write is currently blocked by Row Level Security.
 - Confirmed the page handles the RLS error without crashing.
 - Recruitment and Document Intake demos were not changed.
+
+## Lead Supabase sync moved behind internal API
+
+- Updated `/demos/lead-follow-up` optional Supabase sync to use `/api/lead-records`.
+- Confirmed saving one lead through the internal API route works locally.
+- Confirmed loading one lead from Supabase into local demo state works locally.
+- Kept localStorage as the main working storage.
+- Avoided exposing Supabase service role key in client code.
+- Recruitment and Document Intake demos were not changed.
