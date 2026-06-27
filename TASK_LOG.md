@@ -159,3 +159,13 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Preserved the same API response shape for all three routes.
 - Confirmed live Vercel API routes still return Supabase records after the refactor.
 - Created checkpoint tag `v6-demo-records-api-refactor`.
+
+## Internal demo records viewer added
+
+- Added `/internal/demo-records`.
+- The page loads Lead, Recruitment, and Document Intake records through existing internal API routes.
+- Shows grouped records for all three demos.
+- Shows key metadata such as title, status, source, approval state, created date, and updated date.
+- Includes JSON details for stored raw input and analysis.
+- Does not expose Supabase keys.
+- Created checkpoint tag `v7-internal-demo-records-viewer`.
