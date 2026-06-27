@@ -151,3 +151,11 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Kept localStorage as the main demo workspace for all demos.
 - Confirmed live Vercel API routes return Supabase records.
 - Created checkpoint tag `v5-all-demos-supabase-sync`.
+
+## Demo records API helper refactor
+
+- Added shared server-side helper utilities for demo record API routes.
+- Refactored `/api/lead-records`, `/api/recruitment-records`, and `/api/document-records`.
+- Preserved the same API response shape for all three routes.
+- Confirmed live Vercel API routes still return Supabase records after the refactor.
+- Created checkpoint tag `v6-demo-records-api-refactor`.
