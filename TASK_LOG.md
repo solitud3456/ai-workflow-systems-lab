@@ -179,3 +179,13 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Added browser confirmation before deleting records.
 - Confirmed live Vercel API routes still return clean Supabase records after cleanup.
 - Created checkpoint tag `v8-internal-demo-record-delete`.
+
+## Internal tools environment guard added
+
+- Added `INTERNAL_TOOLS_ENABLED` environment guard.
+- Protected `/internal/demo-records`.
+- Protected `/internal/supabase-status`.
+- Internal pages show a disabled message when the flag is not enabled.
+- Confirmed internal pages work when `INTERNAL_TOOLS_ENABLED=true`.
+- Confirmed disabled state locally when the flag is removed.
+- Created checkpoint tag `v9-internal-tools-env-guard`.
