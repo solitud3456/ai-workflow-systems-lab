@@ -72,3 +72,14 @@ with human-review safeguards preserved.
 
 Pause additional demo development until shared components, storage logic, and
 the reusable demo architecture have been cleaned up.
+
+## Decision: Lead Supabase sync uses internal API route
+
+- Direct browser Supabase writes were intentionally avoided because Row Level Security blocked public writes.
+- The Lead Follow-up demo now syncs through `/api/lead-records`.
+- The API route uses a server-only Supabase admin client with `SUPABASE_SERVICE_ROLE_KEY`.
+- The service role key is stored only in local `.env.local` and Vercel environment variables.
+- The service role key is not exposed to client-side code and is not committed to Git.
+- localStorage remains the main working storage and fallback behavior.
+- Recruitment and Document Intake demos are not wired to Supabase yet.
+- This keeps the project safer than opening public insert/update policies too early.
