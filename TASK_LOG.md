@@ -169,3 +169,13 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Includes JSON details for stored raw input and analysis.
 - Does not expose Supabase keys.
 - Created checkpoint tag `v7-internal-demo-records-viewer`.
+
+## Internal demo record delete actions added
+
+- Added internal delete support for Supabase demo records.
+- Added DELETE support to Lead, Recruitment, and Document Intake API routes.
+- Delete actions only remove records matching the route's demo type.
+- Updated `/internal/demo-records` with per-record delete buttons.
+- Added browser confirmation before deleting records.
+- Confirmed live Vercel API routes still return clean Supabase records after cleanup.
+- Created checkpoint tag `v8-internal-demo-record-delete`.
