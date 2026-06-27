@@ -140,7 +140,25 @@ function parseLeadRawInput(rawInput: string | null): Record<string, unknown> {
 }
 
 function buildLeadTitle(lead: Lead) {
-  return lead.name || lead.source || "Untitled lead";
+  return lead.name.trim() || lead.source.trim() || "Untitled lead";
+}
+
+function getLeadNameSyncIssue(lead: Lead) {
+  const name = lead.name.trim();
+
+  if (!name) {
+    return "Lead names must not be empty.";
+  }
+
+  if (name.toLowerCase() === "untitled lead") {
+    return "Replace the placeholder lead name before saving.";
+  }
+
+  if (name.length < 3) {
+    return "Lead names must be at least 3 characters.";
+  }
+
+  return null;
 }
 
 function mapLeadToDemoRecord(lead: Lead) {
@@ -456,6 +474,24 @@ Return JSON using this exact shape:
       return;
     }
 
+    const invalidLeadCheck = leads
+      .map((lead) => ({ lead, issue: getLeadNameSyncIssue(lead) }))
+      .find(
+        (item): item is { lead: Lead; issue: string } =>
+          item.issue !== null,
+      );
+
+    if (invalidLeadCheck) {
+      const invalidLeadName =
+        invalidLeadCheck.lead.name.trim() || "empty lead";
+
+      setSupabaseSyncMessage({
+        type: "error",
+        text: `Supabase save was not started. ${invalidLeadCheck.issue} Check "${invalidLeadName}" in the local demo workspace.`,
+      });
+      return;
+    }
+
     setIsSupabaseSyncing(true);
     setSupabaseSyncMessage(null);
 
@@ -486,7 +522,7 @@ Return JSON using this exact shape:
 
       setSupabaseSyncMessage({
         type: "success",
-        text: `Saved ${savedCount} lead${savedCount === 1 ? "" : "s"} through the internal API route. localStorage remains the main working storage.`,
+        text: `Saved ${savedCount} lead${savedCount === 1 ? "" : "s"} to Supabase through the internal API route. Your local browser workspace remains active.`,
       });
     } catch (error) {
       setSupabaseSyncMessage({
@@ -504,6 +540,14 @@ Return JSON using this exact shape:
         type: "error",
         text: "Local lead data is still loading. Try again in a moment.",
       });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Load leads from Supabase? This will replace the current local demo state in this browser.",
+      )
+    ) {
       return;
     }
 
@@ -535,7 +579,7 @@ Return JSON using this exact shape:
       if (records.length === 0) {
         setSupabaseSyncMessage({
           type: "success",
-          text: "No lead records were found through the internal API route. Current localStorage leads were not changed.",
+          text: "No lead records were found in Supabase. Current local demo state was not changed.",
         });
         return;
       }
@@ -550,7 +594,7 @@ Return JSON using this exact shape:
       setAnalysisJsonByLeadId({});
       setSupabaseSyncMessage({
         type: "success",
-        text: `Loaded ${loadedLeads.length} lead${loadedLeads.length === 1 ? "" : "s"} from Supabase into the local demo state.`,
+        text: `Loaded ${loadedLeads.length} lead${loadedLeads.length === 1 ? "" : "s"} from Supabase. This replaced the current local demo state and will continue saving to localStorage.`,
       });
     } catch (error) {
       setSupabaseSyncMessage({
@@ -689,10 +733,20 @@ Return JSON using this exact shape:
                     Optional Supabase sync
                   </p>
                   <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-400">
-                    localStorage is still the main working storage for this
-                    demo. These buttons are only for development verification
-                    against the optional Supabase demo_records table.
+                    localStorage is the main demo workspace in this browser.
+                    Supabase sync is optional database persistence for testing
+                    the backend path.
                   </p>
+                  <ul className="mt-3 space-y-1 text-xs leading-5 text-slate-400">
+                    <li>
+                      Save sends the current local leads to the database through
+                      the internal API route.
+                    </li>
+                    <li>
+                      Load replaces the current local demo state with database
+                      records after confirmation.
+                    </li>
+                  </ul>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
