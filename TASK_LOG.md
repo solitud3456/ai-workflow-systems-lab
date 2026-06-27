@@ -140,3 +140,14 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Added safer load behavior because loading from Supabase replaces local demo state.
 - Added validation so obviously invalid lead names are not saved to Supabase.
 - Confirmed production `/api/lead-records` returns a clean Lead Follow-up record.
+
+## All demos have optional Supabase sync
+
+- Added optional Supabase sync to Recruitment Workflow Assistant.
+- Added optional Supabase sync to Document Intake Assistant.
+- Added `/api/recruitment-records` for Recruitment records.
+- Added `/api/document-records` for Document Intake records.
+- Confirmed Lead, Recruitment, and Document Intake now use internal API routes for Supabase sync.
+- Kept localStorage as the main demo workspace for all demos.
+- Confirmed live Vercel API routes return Supabase records.
+- Created checkpoint tag `v5-all-demos-supabase-sync`.
