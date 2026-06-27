@@ -32,11 +32,28 @@ type IntakeDocument = {
   title: string;
   type: string;
   source: string;
+  receivedDate: string;
   content: string;
   internalNotes: string;
   status: DocumentStatus;
   analysis?: DocumentAnalysis;
   analysisApproved: boolean;
+};
+
+type SupabaseSyncMessage = {
+  type: "success" | "error";
+  text: string;
+};
+
+type DocumentDemoRecordRow = {
+  id: string;
+  title: string | null;
+  status: string | null;
+  source: string | null;
+  raw_input: string | null;
+  internal_notes: string | null;
+  analysis: unknown;
+  analysis_approved: boolean | null;
 };
 
 const statusOptions: DocumentStatus[] = [
@@ -53,6 +70,7 @@ const initialDocuments: IntakeDocument[] = [
     title: "Sample service request",
     type: "Client request",
     source: "Email copy",
+    receivedDate: "",
     content:
       "Please update the monthly service plan for the North office beginning next month. The request mentions adding weekend support and sending the revised price for approval, but it does not include the expected weekend hours or the person authorized to approve the change.",
     internalNotes:
@@ -88,6 +106,159 @@ const sampleDocumentAnalysis: DocumentAnalysis = {
 };
 
 const STORAGE_KEY = "ai-workflow-systems-lab-documents";
+const DOCUMENT_API_ROUTE = "/api/document-records";
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function getNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function isDocumentStatus(value: unknown): value is DocumentStatus {
+  return (
+    typeof value === "string" &&
+    statusOptions.some((status) => status === value)
+  );
+}
+
+function parseDocumentRawInput(
+  rawInput: string | null,
+): Record<string, unknown> {
+  if (!rawInput) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(rawInput) as unknown;
+    return isObjectRecord(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function buildDocumentTitle(document: IntakeDocument) {
+  return document.title.trim() || document.type.trim() || "Untitled document";
+}
+
+function getDocumentTitleSyncIssue(document: IntakeDocument) {
+  const title = document.title.trim();
+
+  if (!title) {
+    return "Document titles must not be empty.";
+  }
+
+  if (title.toLowerCase() === "untitled document") {
+    return "Placeholder document titles are skipped.";
+  }
+
+  if (title.length < 3) {
+    return "Document titles must be at least 3 characters.";
+  }
+
+  return null;
+}
+
+function mapDocumentToDemoRecord(document: IntakeDocument) {
+  return {
+    title: buildDocumentTitle(document),
+    status: document.status,
+    source: document.source.trim() || document.type.trim() || null,
+    raw_input: JSON.stringify({
+      id: document.id,
+      title: document.title,
+      type: document.type,
+      source: document.source,
+      receivedDate: document.receivedDate,
+      content: document.content,
+      internalNotes: document.internalNotes,
+      status: document.status,
+    }),
+    internal_notes: document.internalNotes,
+    analysis: document.analysis ?? null,
+    analysis_approved: document.analysisApproved,
+  };
+}
+
+function buildFallbackDocumentId(index: number) {
+  return Date.now() + index;
+}
+
+function mapDemoRecordToDocument(
+  record: DocumentDemoRecordRow,
+  index: number,
+  usedIds: Set<number>,
+): IntakeDocument {
+  const rawDocument = parseDocumentRawInput(record.raw_input);
+  const rawId = getNumber(rawDocument.id);
+  let id = rawId ?? buildFallbackDocumentId(index);
+
+  while (usedIds.has(id)) {
+    id += 1;
+  }
+
+  usedIds.add(id);
+
+  const analysis = isDocumentAnalysis(record.analysis)
+    ? record.analysis
+    : undefined;
+  const status = isDocumentStatus(record.status)
+    ? record.status
+    : isDocumentStatus(rawDocument.status)
+      ? rawDocument.status
+      : "New";
+
+  return {
+    id,
+    title:
+      getString(rawDocument.title) ||
+      record.title ||
+      getString(rawDocument.type) ||
+      "Supabase document",
+    type:
+      getString(rawDocument.type) ||
+      record.source ||
+      "Type not specified",
+    source:
+      getString(rawDocument.source) ||
+      record.source ||
+      "Supabase demo_records",
+    receivedDate: getString(rawDocument.receivedDate) || "",
+    content: getString(rawDocument.content) || "",
+    internalNotes:
+      record.internal_notes || getString(rawDocument.internalNotes) || "",
+    status,
+    analysis,
+    analysisApproved: Boolean(record.analysis_approved && analysis),
+  };
+}
+
+function getSyncErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (isObjectRecord(error) && typeof error.message === "string") {
+    return error.message;
+  }
+
+  return "Unknown Supabase sync error.";
+}
+
+function getApiErrorMessage(responseBody: unknown, fallback: string) {
+  if (isObjectRecord(responseBody) && typeof responseBody.error === "string") {
+    return responseBody.error;
+  }
+
+  return fallback;
+}
 
 function isStringArray(value: unknown): value is string[] {
   return (
@@ -97,20 +268,18 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 function isDocumentAnalysis(value: unknown): value is DocumentAnalysis {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!isObjectRecord(value)) {
     return false;
   }
 
-  const analysis = value as Record<string, unknown>;
-
   return (
-    typeof analysis.summary === "string" &&
-    typeof analysis.documentType === "string" &&
-    isStringArray(analysis.keyPoints) &&
-    isStringArray(analysis.missingInformation) &&
-    isStringArray(analysis.actionItems) &&
-    typeof analysis.riskNote === "string" &&
-    typeof analysis.nextAction === "string"
+    typeof value.summary === "string" &&
+    typeof value.documentType === "string" &&
+    isStringArray(value.keyPoints) &&
+    isStringArray(value.missingInformation) &&
+    isStringArray(value.actionItems) &&
+    typeof value.riskNote === "string" &&
+    typeof value.nextAction === "string"
   );
 }
 
@@ -124,6 +293,9 @@ export default function DocumentIntakePage() {
     Record<number, string>
   >({});
   const [storageReady, setStorageReady] = useState(false);
+  const [supabaseSyncMessage, setSupabaseSyncMessage] =
+    useState<SupabaseSyncMessage | null>(null);
+  const [isSupabaseSyncing, setIsSupabaseSyncing] = useState(false);
 
   useEffect(() => {
     const savedDocuments = window.localStorage.getItem(STORAGE_KEY);
@@ -141,6 +313,7 @@ export default function DocumentIntakePage() {
           parsedDocuments as IntakeDocument[]
         ).map((document) => ({
           ...document,
+          receivedDate: document.receivedDate ?? "",
           analysisApproved: document.analysisApproved ?? false,
         }));
 
@@ -199,6 +372,7 @@ export default function DocumentIntakePage() {
       title: String(formData.get("title") || "Untitled document"),
       type: String(formData.get("type") || "Type not specified"),
       source: String(formData.get("source") || "Unknown source"),
+      receivedDate: String(formData.get("receivedDate") || ""),
       content: String(formData.get("content") || ""),
       internalNotes: String(formData.get("internalNotes") || ""),
       status: "New",
@@ -313,6 +487,7 @@ Document record:
 - Title: ${document.title}
 - Submitted document type: ${document.type}
 - Source: ${document.source}
+- Document received date: ${document.receivedDate || "Not set"}
 - Current status: ${document.status}
 - Internal notes: ${document.internalNotes || "None"}
 - Document text / pasted content: ${document.content || "No document text provided"}
@@ -352,6 +527,154 @@ Return JSON using this exact shape:
 
     await navigator.clipboard.writeText(document.analysis.actionItems.join("\n"));
     window.alert("Action items copied.");
+  }
+
+  async function saveCurrentDocumentsToSupabase() {
+    if (!storageReady) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Local document data is still loading. Try again in a moment.",
+      });
+      return;
+    }
+
+    if (documents.length === 0) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "There are no documents to save to Supabase yet.",
+      });
+      return;
+    }
+
+    const validDocuments = documents.filter(
+      (document) => !getDocumentTitleSyncIssue(document),
+    );
+    const skippedCount = documents.length - validDocuments.length;
+
+    if (validDocuments.length === 0) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Supabase save was not started. Add at least one document with a title of 3 or more characters.",
+      });
+      return;
+    }
+
+    setIsSupabaseSyncing(true);
+    setSupabaseSyncMessage(null);
+
+    try {
+      const response = await fetch(DOCUMENT_API_ROUTE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          records: validDocuments.map(mapDocumentToDemoRecord),
+        }),
+      });
+      const responseBody = (await response.json()) as unknown;
+
+      if (!response.ok) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: `${getApiErrorMessage(responseBody, "Supabase save failed.")} localStorage data was not changed.`,
+        });
+        return;
+      }
+
+      const savedCount =
+        isObjectRecord(responseBody) && typeof responseBody.count === "number"
+          ? responseBody.count
+          : validDocuments.length;
+      const skippedText =
+        skippedCount > 0
+          ? ` Skipped ${skippedCount} document${skippedCount === 1 ? "" : "s"} with missing or invalid titles.`
+          : "";
+
+      setSupabaseSyncMessage({
+        type: "success",
+        text: `Saved ${savedCount} document${savedCount === 1 ? "" : "s"} to Supabase through the internal API route.${skippedText} Your local browser workspace remains active.`,
+      });
+    } catch (error) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: `Supabase save failed: ${getSyncErrorMessage(error)}. localStorage data was not changed.`,
+      });
+    } finally {
+      setIsSupabaseSyncing(false);
+    }
+  }
+
+  async function loadDocumentsFromSupabase() {
+    if (!storageReady) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Local document data is still loading. Try again in a moment.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Load documents from Supabase? This will replace the current local demo state in this browser.",
+      )
+    ) {
+      return;
+    }
+
+    setIsSupabaseSyncing(true);
+    setSupabaseSyncMessage(null);
+
+    try {
+      const response = await fetch(DOCUMENT_API_ROUTE);
+      const responseBody = (await response.json()) as unknown;
+
+      if (!response.ok) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: `${getApiErrorMessage(responseBody, "Supabase load failed.")} Current localStorage documents were not changed.`,
+        });
+        return;
+      }
+
+      if (!isObjectRecord(responseBody) || !Array.isArray(responseBody.records)) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: "Supabase load failed: the API response did not include a records array. Current localStorage documents were not changed.",
+        });
+        return;
+      }
+
+      const records = responseBody.records as DocumentDemoRecordRow[];
+
+      if (records.length === 0) {
+        setSupabaseSyncMessage({
+          type: "success",
+          text: "No document records were found in Supabase. Current local demo state was not changed.",
+        });
+        return;
+      }
+
+      const usedIds = new Set<number>();
+      const loadedDocuments = records.map((record, index) =>
+        mapDemoRecordToDocument(record, index, usedIds),
+      );
+
+      setDocuments(loadedDocuments);
+      setSelectedDocumentId(loadedDocuments[0]?.id ?? null);
+      setAnalysisJsonByDocumentId({});
+      setSupabaseSyncMessage({
+        type: "success",
+        text: `Loaded ${loadedDocuments.length} document${loadedDocuments.length === 1 ? "" : "s"} from Supabase. This replaced the current local demo state and will continue saving to localStorage.`,
+      });
+    } catch (error) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: `Supabase load failed: ${getSyncErrorMessage(error)}. Current localStorage documents were not changed.`,
+      });
+    } finally {
+      setIsSupabaseSyncing(false);
+    }
   }
 
   return (
@@ -424,6 +747,21 @@ Return JSON using this exact shape:
               <div>
                 <label
                   className="text-sm font-medium text-slate-300"
+                  htmlFor="receivedDate"
+                >
+                  Document received date
+                </label>
+                <input
+                  id="receivedDate"
+                  name="receivedDate"
+                  type="date"
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400"
+                />
+              </div>
+
+              <div>
+                <label
+                  className="text-sm font-medium text-slate-300"
                   htmlFor="content"
                 >
                   Document text / pasted content
@@ -490,6 +828,62 @@ Return JSON using this exact shape:
               />
             </div>
 
+            <div className="mt-6 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-cyan-200">
+                    Optional Supabase sync
+                  </p>
+                  <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-400">
+                    localStorage is the main demo workspace in this browser.
+                    Supabase sync is optional database persistence for testing
+                    the backend path.
+                  </p>
+                  <ul className="mt-3 space-y-1 text-xs leading-5 text-slate-400">
+                    <li>
+                      Save sends current local documents to the database
+                      through the internal API route.
+                    </li>
+                    <li>
+                      Load replaces the current local demo state with database
+                      records after confirmation.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={saveCurrentDocumentsToSupabase}
+                    disabled={isSupabaseSyncing}
+                    className="rounded-full border border-cyan-400/60 px-4 py-2 text-xs font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Save current documents to Supabase
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loadDocumentsFromSupabase}
+                    disabled={isSupabaseSyncing}
+                    className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Load documents from Supabase
+                  </button>
+                </div>
+              </div>
+
+              {supabaseSyncMessage ? (
+                <p
+                  className={`mt-4 rounded-xl border px-4 py-3 text-xs leading-5 ${
+                    supabaseSyncMessage.type === "success"
+                      ? "border-emerald-500/20 bg-slate-950/60 text-emerald-200"
+                      : "border-amber-500/20 bg-slate-950/60 text-amber-200"
+                  }`}
+                >
+                  {supabaseSyncMessage.text}
+                </p>
+              ) : null}
+            </div>
+
             <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="space-y-3">
                 {documents.length > 0 ? (
@@ -545,6 +939,15 @@ Return JSON using this exact shape:
                   <p className="mt-1 text-sm text-slate-500">
                     {selectedDocument.source}
                   </p>
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-slate-300">
+                      Document received date
+                    </p>
+                    <p className="mt-2 text-sm text-slate-400">
+                      {selectedDocument.receivedDate ||
+                        "No received date set."}
+                    </p>
+                  </div>
 
                   <button
                     type="button"

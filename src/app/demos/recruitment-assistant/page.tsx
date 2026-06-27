@@ -32,11 +32,28 @@ type Candidate = {
   name: string;
   role: string;
   source: string;
+  applicationDate: string;
   applicationText: string;
   recruiterNotes: string;
   status: CandidateStatus;
   analysis?: CandidateAnalysis;
   analysisApproved: boolean;
+};
+
+type SupabaseSyncMessage = {
+  type: "success" | "error";
+  text: string;
+};
+
+type CandidateDemoRecordRow = {
+  id: string;
+  title: string | null;
+  status: string | null;
+  source: string | null;
+  raw_input: string | null;
+  internal_notes: string | null;
+  analysis: unknown;
+  analysis_approved: boolean | null;
 };
 
 const statusOptions: CandidateStatus[] = [
@@ -53,6 +70,7 @@ const initialCandidates: Candidate[] = [
     name: "Jordan Lee",
     role: "Operations Coordinator",
     source: "Careers page",
+    applicationDate: "",
     applicationText:
       "Three years supporting scheduling, customer requests, and weekly reporting for a small logistics team. Comfortable with spreadsheets and coordinating across departments. Interested in moving into a role with more process ownership.",
     recruiterNotes:
@@ -82,27 +100,178 @@ const sampleCandidateAnalysis: CandidateAnalysis = {
 };
 
 const STORAGE_KEY = "ai-workflow-systems-lab-candidates";
+const RECRUITMENT_API_ROUTE = "/api/recruitment-records";
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function getNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function isCandidateStatus(value: unknown): value is CandidateStatus {
+  return (
+    typeof value === "string" &&
+    statusOptions.some((status) => status === value)
+  );
+}
+
+function parseCandidateRawInput(
+  rawInput: string | null,
+): Record<string, unknown> {
+  if (!rawInput) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(rawInput) as unknown;
+    return isObjectRecord(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function buildCandidateTitle(candidate: Candidate) {
+  return candidate.name.trim() || candidate.role.trim() || "Untitled candidate";
+}
+
+function getCandidateNameSyncIssue(candidate: Candidate) {
+  const name = candidate.name.trim();
+
+  if (!name) {
+    return "Candidate names must not be empty.";
+  }
+
+  if (name.toLowerCase() === "untitled candidate") {
+    return "Placeholder candidate names are skipped.";
+  }
+
+  if (name.length < 3) {
+    return "Candidate names must be at least 3 characters.";
+  }
+
+  return null;
+}
+
+function mapCandidateToDemoRecord(candidate: Candidate) {
+  return {
+    title: buildCandidateTitle(candidate),
+    status: candidate.status,
+    source: candidate.source.trim() || candidate.role.trim() || null,
+    raw_input: JSON.stringify({
+      id: candidate.id,
+      name: candidate.name,
+      role: candidate.role,
+      source: candidate.source,
+      applicationDate: candidate.applicationDate,
+      applicationText: candidate.applicationText,
+      recruiterNotes: candidate.recruiterNotes,
+      status: candidate.status,
+    }),
+    internal_notes: candidate.recruiterNotes,
+    analysis: candidate.analysis ?? null,
+    analysis_approved: candidate.analysisApproved,
+  };
+}
+
+function buildFallbackCandidateId(index: number) {
+  return Date.now() + index;
+}
+
+function mapDemoRecordToCandidate(
+  record: CandidateDemoRecordRow,
+  index: number,
+  usedIds: Set<number>,
+): Candidate {
+  const rawCandidate = parseCandidateRawInput(record.raw_input);
+  const rawId = getNumber(rawCandidate.id);
+  let id = rawId ?? buildFallbackCandidateId(index);
+
+  while (usedIds.has(id)) {
+    id += 1;
+  }
+
+  usedIds.add(id);
+
+  const analysis = isCandidateAnalysis(record.analysis)
+    ? record.analysis
+    : undefined;
+  const status = isCandidateStatus(record.status)
+    ? record.status
+    : isCandidateStatus(rawCandidate.status)
+      ? rawCandidate.status
+      : "New";
+
+  return {
+    id,
+    name:
+      getString(rawCandidate.name) ||
+      record.title ||
+      getString(rawCandidate.role) ||
+      "Supabase candidate",
+    role:
+      getString(rawCandidate.role) ||
+      record.source ||
+      "Role not specified",
+    source:
+      getString(rawCandidate.source) ||
+      record.source ||
+      "Supabase demo_records",
+    applicationDate: getString(rawCandidate.applicationDate) || "",
+    applicationText: getString(rawCandidate.applicationText) || "",
+    recruiterNotes:
+      record.internal_notes || getString(rawCandidate.recruiterNotes) || "",
+    status,
+    analysis,
+    analysisApproved: Boolean(record.analysis_approved && analysis),
+  };
+}
+
+function getSyncErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (isObjectRecord(error) && typeof error.message === "string") {
+    return error.message;
+  }
+
+  return "Unknown Supabase sync error.";
+}
+
+function getApiErrorMessage(responseBody: unknown, fallback: string) {
+  if (isObjectRecord(responseBody) && typeof responseBody.error === "string") {
+    return responseBody.error;
+  }
+
+  return fallback;
+}
 
 function isCandidateAnalysis(value: unknown): value is CandidateAnalysis {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!isObjectRecord(value)) {
     return false;
   }
 
-  const analysis = value as Record<string, unknown>;
-
   return (
-    typeof analysis.summary === "string" &&
-    (analysis.fitScore === "low" ||
-      analysis.fitScore === "medium" ||
-      analysis.fitScore === "high") &&
-    typeof analysis.strengths === "string" &&
-    typeof analysis.concerns === "string" &&
-    Array.isArray(analysis.suggestedInterviewQuestions) &&
-    analysis.suggestedInterviewQuestions.every(
+    typeof value.summary === "string" &&
+    (value.fitScore === "low" ||
+      value.fitScore === "medium" ||
+      value.fitScore === "high") &&
+    typeof value.strengths === "string" &&
+    typeof value.concerns === "string" &&
+    Array.isArray(value.suggestedInterviewQuestions) &&
+    value.suggestedInterviewQuestions.every(
       (question) => typeof question === "string",
     ) &&
-    typeof analysis.nextAction === "string" &&
-    typeof analysis.riskNote === "string"
+    typeof value.nextAction === "string" &&
+    typeof value.riskNote === "string"
   );
 }
 
@@ -116,6 +285,9 @@ export default function RecruitmentAssistantPage() {
     Record<number, string>
   >({});
   const [storageReady, setStorageReady] = useState(false);
+  const [supabaseSyncMessage, setSupabaseSyncMessage] =
+    useState<SupabaseSyncMessage | null>(null);
+  const [isSupabaseSyncing, setIsSupabaseSyncing] = useState(false);
 
   useEffect(() => {
     const savedCandidates = window.localStorage.getItem(STORAGE_KEY);
@@ -126,6 +298,7 @@ export default function RecruitmentAssistantPage() {
         const parsedCandidates = JSON.parse(savedCandidates) as Candidate[];
         const savedCandidateRecords = parsedCandidates.map((candidate) => ({
           ...candidate,
+          applicationDate: candidate.applicationDate ?? "",
           analysisApproved: candidate.analysisApproved ?? false,
         }));
 
@@ -184,6 +357,7 @@ export default function RecruitmentAssistantPage() {
       name: String(formData.get("name") || "Untitled candidate"),
       role: String(formData.get("role") || "Role not specified"),
       source: String(formData.get("source") || "Unknown source"),
+      applicationDate: String(formData.get("applicationDate") || ""),
       applicationText: String(formData.get("applicationText") || ""),
       recruiterNotes: String(formData.get("recruiterNotes") || ""),
       status: "New",
@@ -298,6 +472,7 @@ Candidate record:
 - Candidate name: ${candidate.name}
 - Role applied for: ${candidate.role}
 - Source: ${candidate.source}
+- Application date: ${candidate.applicationDate || "Not set"}
 - Current status: ${candidate.status}
 - Internal recruiter notes: ${candidate.recruiterNotes || "None"}
 - Candidate notes / application text: ${candidate.applicationText || "No application text provided"}
@@ -339,6 +514,154 @@ Return JSON using this exact shape:
       candidate.analysis.suggestedInterviewQuestions.join("\n"),
     );
     window.alert("Interview questions copied.");
+  }
+
+  async function saveCurrentCandidatesToSupabase() {
+    if (!storageReady) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Local candidate data is still loading. Try again in a moment.",
+      });
+      return;
+    }
+
+    if (candidates.length === 0) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "There are no candidates to save to Supabase yet.",
+      });
+      return;
+    }
+
+    const validCandidates = candidates.filter(
+      (candidate) => !getCandidateNameSyncIssue(candidate),
+    );
+    const skippedCount = candidates.length - validCandidates.length;
+
+    if (validCandidates.length === 0) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Supabase save was not started. Add at least one candidate with a name of 3 or more characters.",
+      });
+      return;
+    }
+
+    setIsSupabaseSyncing(true);
+    setSupabaseSyncMessage(null);
+
+    try {
+      const response = await fetch(RECRUITMENT_API_ROUTE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          records: validCandidates.map(mapCandidateToDemoRecord),
+        }),
+      });
+      const responseBody = (await response.json()) as unknown;
+
+      if (!response.ok) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: `${getApiErrorMessage(responseBody, "Supabase save failed.")} localStorage data was not changed.`,
+        });
+        return;
+      }
+
+      const savedCount =
+        isObjectRecord(responseBody) && typeof responseBody.count === "number"
+          ? responseBody.count
+          : validCandidates.length;
+      const skippedText =
+        skippedCount > 0
+          ? ` Skipped ${skippedCount} candidate${skippedCount === 1 ? "" : "s"} with missing or invalid names.`
+          : "";
+
+      setSupabaseSyncMessage({
+        type: "success",
+        text: `Saved ${savedCount} candidate${savedCount === 1 ? "" : "s"} to Supabase through the internal API route.${skippedText} Your local browser workspace remains active.`,
+      });
+    } catch (error) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: `Supabase save failed: ${getSyncErrorMessage(error)}. localStorage data was not changed.`,
+      });
+    } finally {
+      setIsSupabaseSyncing(false);
+    }
+  }
+
+  async function loadCandidatesFromSupabase() {
+    if (!storageReady) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: "Local candidate data is still loading. Try again in a moment.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Load candidates from Supabase? This will replace the current local demo state in this browser.",
+      )
+    ) {
+      return;
+    }
+
+    setIsSupabaseSyncing(true);
+    setSupabaseSyncMessage(null);
+
+    try {
+      const response = await fetch(RECRUITMENT_API_ROUTE);
+      const responseBody = (await response.json()) as unknown;
+
+      if (!response.ok) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: `${getApiErrorMessage(responseBody, "Supabase load failed.")} Current localStorage candidates were not changed.`,
+        });
+        return;
+      }
+
+      if (!isObjectRecord(responseBody) || !Array.isArray(responseBody.records)) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: "Supabase load failed: the API response did not include a records array. Current localStorage candidates were not changed.",
+        });
+        return;
+      }
+
+      const records = responseBody.records as CandidateDemoRecordRow[];
+
+      if (records.length === 0) {
+        setSupabaseSyncMessage({
+          type: "success",
+          text: "No candidate records were found in Supabase. Current local demo state was not changed.",
+        });
+        return;
+      }
+
+      const usedIds = new Set<number>();
+      const loadedCandidates = records.map((record, index) =>
+        mapDemoRecordToCandidate(record, index, usedIds),
+      );
+
+      setCandidates(loadedCandidates);
+      setSelectedCandidateId(loadedCandidates[0]?.id ?? null);
+      setAnalysisJsonByCandidateId({});
+      setSupabaseSyncMessage({
+        type: "success",
+        text: `Loaded ${loadedCandidates.length} candidate${loadedCandidates.length === 1 ? "" : "s"} from Supabase. This replaced the current local demo state and will continue saving to localStorage.`,
+      });
+    } catch (error) {
+      setSupabaseSyncMessage({
+        type: "error",
+        text: `Supabase load failed: ${getSyncErrorMessage(error)}. Current localStorage candidates were not changed.`,
+      });
+    } finally {
+      setIsSupabaseSyncing(false);
+    }
   }
 
   return (
@@ -411,6 +734,21 @@ Return JSON using this exact shape:
               <div>
                 <label
                   className="text-sm font-medium text-slate-300"
+                  htmlFor="applicationDate"
+                >
+                  Application date
+                </label>
+                <input
+                  id="applicationDate"
+                  name="applicationDate"
+                  type="date"
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400"
+                />
+              </div>
+
+              <div>
+                <label
+                  className="text-sm font-medium text-slate-300"
                   htmlFor="applicationText"
                 >
                   Candidate notes / application text
@@ -477,6 +815,62 @@ Return JSON using this exact shape:
               />
             </div>
 
+            <div className="mt-6 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-cyan-200">
+                    Optional Supabase sync
+                  </p>
+                  <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-400">
+                    localStorage is the main demo workspace in this browser.
+                    Supabase sync is optional database persistence for testing
+                    the backend path.
+                  </p>
+                  <ul className="mt-3 space-y-1 text-xs leading-5 text-slate-400">
+                    <li>
+                      Save sends current local candidates to the database
+                      through the internal API route.
+                    </li>
+                    <li>
+                      Load replaces the current local demo state with database
+                      records after confirmation.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={saveCurrentCandidatesToSupabase}
+                    disabled={isSupabaseSyncing}
+                    className="rounded-full border border-cyan-400/60 px-4 py-2 text-xs font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Save current candidates to Supabase
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loadCandidatesFromSupabase}
+                    disabled={isSupabaseSyncing}
+                    className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Load candidates from Supabase
+                  </button>
+                </div>
+              </div>
+
+              {supabaseSyncMessage ? (
+                <p
+                  className={`mt-4 rounded-xl border px-4 py-3 text-xs leading-5 ${
+                    supabaseSyncMessage.type === "success"
+                      ? "border-emerald-500/20 bg-slate-950/60 text-emerald-200"
+                      : "border-amber-500/20 bg-slate-950/60 text-amber-200"
+                  }`}
+                >
+                  {supabaseSyncMessage.text}
+                </p>
+              ) : null}
+            </div>
+
             <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="space-y-3">
                 {candidates.length > 0 ? (
@@ -532,6 +926,15 @@ Return JSON using this exact shape:
                   <p className="mt-1 text-sm text-slate-500">
                     {selectedCandidate.source}
                   </p>
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-slate-300">
+                      Application date
+                    </p>
+                    <p className="mt-2 text-sm text-slate-400">
+                      {selectedCandidate.applicationDate ||
+                        "No application date set."}
+                    </p>
+                  </div>
 
                   <button
                     type="button"
