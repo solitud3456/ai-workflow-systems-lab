@@ -9,7 +9,6 @@ import DemoPanel from "@/components/demo/DemoPanel";
 import EmptyState from "@/components/demo/EmptyState";
 import MetricCard from "@/components/demo/MetricCard";
 import StatusSelect from "@/components/demo/StatusSelect";
-import { supabaseClient } from "@/lib/supabaseClient";
 
 type LeadStatus = "New" | "Contacted" | "Waiting" | "Booked" | "Lost";
 
@@ -211,7 +210,7 @@ function mapDemoRecordToLead(
   };
 }
 
-function getSupabaseErrorMessage(error: unknown) {
+function getSyncErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message;
   }
@@ -221,6 +220,14 @@ function getSupabaseErrorMessage(error: unknown) {
   }
 
   return "Unknown Supabase error.";
+}
+
+function getApiErrorMessage(responseBody: unknown, fallback: string) {
+  if (isObjectRecord(responseBody) && typeof responseBody.error === "string") {
+    return responseBody.error;
+  }
+
+  return fallback;
 }
 
 export default function LeadFollowUpPage() {
@@ -441,14 +448,6 @@ Return JSON using this exact shape:
       return;
     }
 
-    if (!supabaseClient) {
-      setSupabaseSyncMessage({
-        type: "error",
-        text: "Supabase is not configured in this build. localStorage is still working.",
-      });
-      return;
-    }
-
     if (leads.length === 0) {
       setSupabaseSyncMessage({
         type: "error",
@@ -461,26 +460,38 @@ Return JSON using this exact shape:
     setSupabaseSyncMessage(null);
 
     try {
-      const { error } = await supabaseClient
-        .from("demo_records")
-        .insert(leads.map(mapLeadToDemoRecord));
+      const response = await fetch("/api/lead-records", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          records: leads.map(mapLeadToDemoRecord),
+        }),
+      });
+      const responseBody = (await response.json()) as unknown;
 
-      if (error) {
+      if (!response.ok) {
         setSupabaseSyncMessage({
           type: "error",
-          text: `Supabase save failed: ${error.message}. localStorage data was not changed.`,
+          text: `${getApiErrorMessage(responseBody, "Supabase save failed.")} localStorage data was not changed.`,
         });
         return;
       }
 
+      const savedCount =
+        isObjectRecord(responseBody) && typeof responseBody.count === "number"
+          ? responseBody.count
+          : leads.length;
+
       setSupabaseSyncMessage({
         type: "success",
-        text: `Saved ${leads.length} lead${leads.length === 1 ? "" : "s"} to Supabase. localStorage remains the main working storage.`,
+        text: `Saved ${savedCount} lead${savedCount === 1 ? "" : "s"} through the internal API route. localStorage remains the main working storage.`,
       });
     } catch (error) {
       setSupabaseSyncMessage({
         type: "error",
-        text: `Supabase save failed: ${getSupabaseErrorMessage(error)}. localStorage data was not changed.`,
+        text: `Supabase save failed: ${getSyncErrorMessage(error)}. localStorage data was not changed.`,
       });
     } finally {
       setIsSupabaseSyncing(false);
@@ -496,40 +507,35 @@ Return JSON using this exact shape:
       return;
     }
 
-    if (!supabaseClient) {
-      setSupabaseSyncMessage({
-        type: "error",
-        text: "Supabase is not configured in this build. localStorage is still working.",
-      });
-      return;
-    }
-
     setIsSupabaseSyncing(true);
     setSupabaseSyncMessage(null);
 
     try {
-      const { data, error } = await supabaseClient
-        .from("demo_records")
-        .select(
-          "id, title, status, source, raw_input, internal_notes, analysis, analysis_approved",
-        )
-        .eq("demo_type", LEAD_DEMO_TYPE)
-        .order("created_at", { ascending: false });
+      const response = await fetch("/api/lead-records");
+      const responseBody = (await response.json()) as unknown;
 
-      if (error) {
+      if (!response.ok) {
         setSupabaseSyncMessage({
           type: "error",
-          text: `Supabase load failed: ${error.message}. Current localStorage leads were not changed.`,
+          text: `${getApiErrorMessage(responseBody, "Supabase load failed.")} Current localStorage leads were not changed.`,
         });
         return;
       }
 
-      const records = (data ?? []) as LeadDemoRecordRow[];
+      if (!isObjectRecord(responseBody) || !Array.isArray(responseBody.records)) {
+        setSupabaseSyncMessage({
+          type: "error",
+          text: "Supabase load failed: the API response did not include a records array. Current localStorage leads were not changed.",
+        });
+        return;
+      }
+
+      const records = responseBody.records as LeadDemoRecordRow[];
 
       if (records.length === 0) {
         setSupabaseSyncMessage({
           type: "success",
-          text: "No lead records were found in Supabase. Current localStorage leads were not changed.",
+          text: "No lead records were found through the internal API route. Current localStorage leads were not changed.",
         });
         return;
       }
@@ -549,7 +555,7 @@ Return JSON using this exact shape:
     } catch (error) {
       setSupabaseSyncMessage({
         type: "error",
-        text: `Supabase load failed: ${getSupabaseErrorMessage(error)}. Current localStorage leads were not changed.`,
+        text: `Supabase load failed: ${getSyncErrorMessage(error)}. Current localStorage leads were not changed.`,
       });
     } finally {
       setIsSupabaseSyncing(false);
