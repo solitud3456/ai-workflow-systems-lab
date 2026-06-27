@@ -22,6 +22,7 @@ const recordSections = [
 ] as const;
 
 type SectionKey = (typeof recordSections)[number]["key"];
+type RecordSection = (typeof recordSections)[number];
 
 type DemoRecord = {
   id: string;
@@ -37,6 +38,10 @@ type DemoRecord = {
 
 type RecordsBySection = Record<SectionKey, DemoRecord[]>;
 type ErrorsBySection = Partial<Record<SectionKey, string>>;
+type ActionMessage = {
+  kind: "success" | "error";
+  text: string;
+} | null;
 
 function buildEmptyRecords(): RecordsBySection {
   return {
@@ -121,6 +126,28 @@ async function fetchDemoRecords(endpoint: string): Promise<DemoRecord[]> {
   return body.records.map(normalizeDemoRecord);
 }
 
+async function deleteRecordFromApi(endpoint: string, id: string) {
+  const response = await fetch(`${endpoint}?id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The API response was not valid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(getApiError(body, "The delete request failed."));
+  }
+
+  if (!isObjectRecord(body) || body.ok !== true) {
+    throw new Error("The API response did not confirm the delete action.");
+  }
+}
+
 function parseMaybeJson(value: unknown) {
   if (typeof value !== "string") {
     return value ?? null;
@@ -158,7 +185,15 @@ function formatJsonDetails(record: DemoRecord) {
   );
 }
 
-function RecordCard({ record }: { record: DemoRecord }) {
+function RecordCard({
+  record,
+  isDeleting,
+  onDelete,
+}: {
+  record: DemoRecord;
+  isDeleting: boolean;
+  onDelete: () => void;
+}) {
   return (
     <article className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -184,6 +219,14 @@ function RecordCard({ record }: { record: DemoRecord }) {
           >
             analysis_approved: {record.analysis_approved ? "true" : "false"}
           </span>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={isDeleting}
+            className="rounded-full border border-rose-400/40 px-3 py-1 text-xs font-semibold text-rose-200 transition hover:border-rose-300 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </button>
         </div>
       </div>
 
@@ -220,6 +263,8 @@ export default function DemoRecordsPage() {
   const [errorsBySection, setErrorsBySection] = useState<ErrorsBySection>({});
   const [isLoading, setIsLoading] = useState(true);
   const [lastLoadedAt, setLastLoadedAt] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<ActionMessage>(null);
+  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
 
   const loadRecords = useCallback(async () => {
     setIsLoading(true);
@@ -262,6 +307,38 @@ export default function DemoRecordsPage() {
     setIsLoading(false);
   }, []);
 
+  const handleDeleteRecord = useCallback(
+    async (section: RecordSection, record: DemoRecord) => {
+      const confirmed = window.confirm(
+        `Delete "${record.title}" from Supabase? This does not delete localStorage demo data.`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setActionMessage(null);
+      setDeletingRecordId(record.id);
+
+      try {
+        await deleteRecordFromApi(section.endpoint, record.id);
+        setActionMessage({
+          kind: "success",
+          text: `Deleted "${record.title}" from Supabase.`,
+        });
+        await loadRecords();
+      } catch (error) {
+        setActionMessage({
+          kind: "error",
+          text: getErrorMessage(error),
+        });
+      } finally {
+        setDeletingRecordId(null);
+      }
+    },
+    [loadRecords],
+  );
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void loadRecords();
@@ -277,7 +354,7 @@ export default function DemoRecordsPage() {
           <PageHeader
             eyebrow="Internal"
             title="Demo Records"
-            description="A small development viewer for checking optional Supabase persistence through the existing internal API routes. This page is read-only and does not expose Supabase keys."
+            description="A small development viewer for checking and cleaning up optional Supabase persistence through the existing internal API routes. This page does not expose Supabase keys."
           />
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 lg:min-w-56">
@@ -303,10 +380,23 @@ export default function DemoRecordsPage() {
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
             This viewer reads from the same API routes used by optional demo
-            sync. It does not edit records, delete records, add auth, change
-            RLS, or connect directly to Supabase from the browser.
+            sync. Delete only removes Supabase records for cleanup; it does not
+            touch browser localStorage, add auth, change RLS, or connect
+            directly to Supabase from the browser.
           </p>
         </section>
+
+        {actionMessage ? (
+          <p
+            className={
+              actionMessage.kind === "success"
+                ? "mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-200"
+                : "mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-200"
+            }
+          >
+            {actionMessage.text}
+          </p>
+        ) : null}
 
         <div className="mt-8 grid gap-6">
           {recordSections.map((section) => {
@@ -351,7 +441,12 @@ export default function DemoRecordsPage() {
                 ) : (
                   <div className="mt-5 grid gap-4">
                     {records.map((record) => (
-                      <RecordCard key={record.id} record={record} />
+                      <RecordCard
+                        key={record.id}
+                        record={record}
+                        isDeleting={deletingRecordId === record.id}
+                        onDelete={() => void handleDeleteRecord(section, record)}
+                      />
                     ))}
                   </div>
                 )}

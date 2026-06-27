@@ -1,4 +1,5 @@
 import {
+  deleteDemoRecord,
   getConfigErrorStatus,
   getErrorMessage,
   getRequestRecords,
@@ -32,6 +33,28 @@ export async function GET() {
     return Response.json({
       ok: true,
       records: data ?? [],
+    });
+  } catch (error) {
+    return jsonError(getErrorMessage(error), getConfigErrorStatus(error));
+  }
+}
+
+export async function DELETE(request: Request) {
+  const id = new URL(request.url).searchParams.get("id")?.trim();
+
+  if (!id) {
+    return jsonError("A record id is required.", 400);
+  }
+
+  try {
+    const { error } = await deleteDemoRecord(RECRUITMENT_DEMO_TYPE, id);
+
+    if (error) {
+      return jsonError(`Supabase delete failed: ${error.message}`, 500);
+    }
+
+    return Response.json({
+      ok: true,
     });
   } catch (error) {
     return jsonError(getErrorMessage(error), getConfigErrorStatus(error));

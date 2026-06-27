@@ -147,3 +147,13 @@ export async function replaceDemoRecords(
     insertError,
   };
 }
+
+export async function deleteDemoRecord(demoType: string, id: string) {
+  const supabase = getSupabaseAdminClient();
+
+  return supabase
+    .from("demo_records")
+    .delete()
+    .eq("demo_type", demoType)
+    .eq("id", id);
+}
