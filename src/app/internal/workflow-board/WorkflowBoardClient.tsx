@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import {
+  getWorkflowStatusColumns,
+  getWorkflowStatusOptions,
+  UNSPECIFIED_WORKFLOW_STATUS,
+} from "@/lib/workflowStatus";
 
 const workflows = [
   {
@@ -21,8 +26,6 @@ const workflows = [
     apiEndpoint: "/api/document-records",
   },
 ] as const;
-
-const UNSPECIFIED_STATUS = "Unspecified";
 
 type Workflow = (typeof workflows)[number];
 type WorkflowKey = Workflow["key"];
@@ -190,7 +193,7 @@ function getLatestDate(record: DemoRecord) {
 }
 
 function getStatusColumn(record: DemoRecord) {
-  return record.status.trim() || UNSPECIFIED_STATUS;
+  return record.status.trim() || UNSPECIFIED_WORKFLOW_STATUS;
 }
 
 function normalizeDemoRecord(
@@ -315,20 +318,10 @@ function matchesSearch(record: DemoRecord, query: string) {
 }
 
 function buildStatusColumns(records: DemoRecord[]) {
-  const statusSet = new Set(records.map(getStatusColumn));
-  const statuses = Array.from(statusSet);
-
-  return statuses.sort((first, second) => {
-    if (first === UNSPECIFIED_STATUS) {
-      return 1;
-    }
-
-    if (second === UNSPECIFIED_STATUS) {
-      return -1;
-    }
-
-    return first.localeCompare(second);
-  });
+  return getWorkflowStatusColumns(
+    records.map((record) => record.status),
+    records.some((record) => !record.status.trim()),
+  );
 }
 
 function groupRecordsByStatus(records: DemoRecord[], statuses: string[]) {
@@ -446,14 +439,7 @@ export default function WorkflowBoardClient() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const statusOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          records
-            .map((record) => record.status.trim())
-            .filter((status) => status),
-        ),
-      ).sort((first, second) => first.localeCompare(second)),
+    () => getWorkflowStatusOptions(records.map((record) => record.status)),
     [records],
   );
 

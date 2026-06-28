@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import { getWorkflowStatusOptions } from "@/lib/workflowStatus";
 
 const workflows = [
   {
@@ -228,7 +229,7 @@ function normalizeDemoRecord(
 
 function buildDraft(record: DemoRecord): ReviewDraft {
   return {
-    status: record.status,
+    status: record.status.trim(),
     analysis_approved: record.analysis_approved,
   };
 }
@@ -363,6 +364,7 @@ function ReviewQueueCard({
   draft,
   isSelected,
   isSaving,
+  statusOptions,
   onDraftChange,
   onSave,
   onSelectedChange,
@@ -371,6 +373,7 @@ function ReviewQueueCard({
   draft: ReviewDraft;
   isSelected: boolean;
   isSaving: boolean;
+  statusOptions: string[];
   onDraftChange: (updates: Partial<ReviewDraft>) => void;
   onSave: () => void;
   onSelectedChange: (selected: boolean) => void;
@@ -450,8 +453,7 @@ function ReviewQueueCard({
       <div className="mt-4 grid gap-4 rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-4 lg:grid-cols-[1fr_auto_auto] lg:items-end">
         <label className="text-sm font-semibold text-slate-200">
           Update status
-          <input
-            type="text"
+          <select
             value={draft.status}
             onChange={(event) =>
               onDraftChange({
@@ -459,7 +461,14 @@ function ReviewQueueCard({
               })
             }
             className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
-          />
+          >
+            <option value="">Choose status</option>
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
         </label>
 
         <button
@@ -512,16 +521,20 @@ export default function ReviewQueueClient() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const statusOptions = useMemo(
+  const recordStatusOptions = useMemo(
     () =>
       Array.from(
         new Set(
           records
-            .map((record) => record.status)
+            .map((record) => record.status.trim())
             .filter((status) => status.trim()),
         ),
       ).sort((first, second) => first.localeCompare(second)),
     [records],
+  );
+  const statusOptions = useMemo(
+    () => getWorkflowStatusOptions(recordStatusOptions),
+    [recordStatusOptions],
   );
 
   const filteredRecords = useMemo(() => {
@@ -546,7 +559,7 @@ export default function ReviewQueueClient() {
         return false;
       }
 
-      if (statusFilter !== "all" && record.status !== statusFilter) {
+      if (statusFilter !== "all" && record.status.trim() !== statusFilter) {
         return false;
       }
 
@@ -610,7 +623,9 @@ export default function ReviewQueueClient() {
       }
     });
 
-    const nextStatuses = new Set(nextRecords.map((record) => record.status));
+    const nextStatuses = new Set(
+      nextRecords.map((record) => record.status.trim()),
+    );
 
     setRecords(nextRecords);
     setDrafts(buildDrafts(nextRecords));
@@ -952,7 +967,7 @@ export default function ReviewQueueClient() {
                 className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
               >
                 <option value="all">All statuses</option>
-                {statusOptions.map((status) => (
+                {recordStatusOptions.map((status) => (
                   <option key={status} value={status}>
                     {status}
                   </option>
@@ -1034,19 +1049,18 @@ export default function ReviewQueueClient() {
 
             <label className="text-sm font-semibold text-slate-200">
               Bulk status
-              <input
-                type="text"
+              <select
                 value={bulkStatus}
                 onChange={(event) => setBulkStatus(event.target.value)}
-                list="review-queue-status-options"
-                placeholder="Enter status"
                 className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
-              />
-              <datalist id="review-queue-status-options">
+              >
+                <option value="">Choose status</option>
                 {statusOptions.map((status) => (
-                  <option key={status} value={status} />
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </label>
 
             <button
@@ -1129,6 +1143,7 @@ export default function ReviewQueueClient() {
                   draft={drafts[record.queueKey] ?? buildDraft(record)}
                   isSelected={selectedRecordKeySet.has(record.queueKey)}
                   isSaving={savingRecordKey === record.queueKey || isBulkSaving}
+                  statusOptions={statusOptions}
                   onDraftChange={(updates) =>
                     handleDraftChange(record, updates)
                   }
