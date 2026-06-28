@@ -189,3 +189,12 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Confirmed internal pages work when `INTERNAL_TOOLS_ENABLED=true`.
 - Confirmed disabled state locally when the flag is removed.
 - Created checkpoint tag `v9-internal-tools-env-guard`.
+
+## API delete guard added
+
+- Added server-side guard for internal demo record DELETE actions.
+- DELETE actions now depend on `INTERNAL_TOOLS_ENABLED=true`.
+- GET routes remain available for Lead, Recruitment, and Document Intake records.
+- Confirmed live Vercel API routes still return Supabase records.
+- Confirmed live DELETE behavior works when internal tools are enabled.
+- Created checkpoint tag `v10-api-delete-guard`.
