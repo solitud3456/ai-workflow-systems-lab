@@ -21,6 +21,18 @@ const recordSections = [
   },
 ] as const;
 
+const csvColumns = [
+  "demo_type",
+  "title",
+  "status",
+  "source",
+  "analysis_approved",
+  "created_at",
+  "updated_at",
+  "raw_input",
+  "analysis",
+] as const;
+
 type SectionKey = (typeof recordSections)[number]["key"];
 type RecordSection = (typeof recordSections)[number];
 
@@ -201,10 +213,9 @@ function buildExportRecord(record: DemoRecord) {
   };
 }
 
-function downloadJsonFile(fileName: string, records: DemoRecord[]) {
-  const exportPayload = records.map(buildExportRecord);
-  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
-    type: "application/json",
+function downloadTextFile(fileName: string, contents: string, type: string) {
+  const blob = new Blob([contents], {
+    type,
   });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -215,10 +226,70 @@ function downloadJsonFile(fileName: string, records: DemoRecord[]) {
   URL.revokeObjectURL(url);
 }
 
-function buildExportFileName(scope: string) {
+function downloadJsonFile(fileName: string, records: DemoRecord[]) {
+  const exportPayload = records.map(buildExportRecord);
+
+  downloadTextFile(
+    fileName,
+    JSON.stringify(exportPayload, null, 2),
+    "application/json",
+  );
+}
+
+function getCsvValue(value: unknown) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return String(value);
+  }
+
+  return JSON.stringify(value);
+}
+
+function escapeCsvValue(value: unknown) {
+  const text = getCsvValue(value);
+  const escapedText = text.replace(/"/g, '""');
+
+  if (/[",\r\n]/.test(text)) {
+    return `"${escapedText}"`;
+  }
+
+  return escapedText;
+}
+
+function buildCsvFile(records: DemoRecord[]) {
+  const rows = records.map((record) => [
+    record.demo_type,
+    record.title,
+    record.status,
+    record.source,
+    record.analysis_approved,
+    record.created_at,
+    record.updated_at,
+    record.raw_input,
+    record.analysis,
+  ]);
+
+  return [
+    csvColumns.join(","),
+    ...rows.map((row) => row.map(escapeCsvValue).join(",")),
+  ].join("\n");
+}
+
+function downloadCsvFile(fileName: string, records: DemoRecord[]) {
+  downloadTextFile(fileName, buildCsvFile(records), "text/csv;charset=utf-8");
+}
+
+function buildExportFileName(scope: string, extension: "csv" | "json") {
   const date = new Date().toISOString().slice(0, 10);
 
-  return `demo-records-${scope}-${date}.json`;
+  return `demo-records-${scope}-${date}.${extension}`;
 }
 
 function RecordCard({
@@ -389,12 +460,33 @@ export default function DemoRecordsClient() {
         return;
       }
 
-      downloadJsonFile(buildExportFileName(scope), records);
+      downloadJsonFile(buildExportFileName(scope, "json"), records);
       setActionMessage({
         kind: "success",
         text: `Exported ${records.length} ${
           records.length === 1 ? "record" : "records"
         } as JSON.`,
+      });
+    },
+    [],
+  );
+
+  const handleExportCsvRecords = useCallback(
+    (scope: string, records: DemoRecord[]) => {
+      if (records.length === 0) {
+        setActionMessage({
+          kind: "error",
+          text: "There are no loaded records to export for that selection.",
+        });
+        return;
+      }
+
+      downloadCsvFile(buildExportFileName(scope, "csv"), records);
+      setActionMessage({
+        kind: "success",
+        text: `Exported ${records.length} ${
+          records.length === 1 ? "record" : "records"
+        } as CSV.`,
       });
     },
     [],
@@ -454,40 +546,86 @@ export default function DemoRecordsClient() {
                 Export loaded records
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                Downloads JSON from the records currently loaded on this page.
-                Section exports are disabled when that workflow has no loaded
-                records.
+                Downloads JSON or CSV from the records currently loaded on this
+                page. Section exports are disabled when that workflow has no
+                loaded records.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[32rem]">
-              <button
-                type="button"
-                onClick={() => handleExportRecords("all", allRecords)}
-                disabled={isLoading || allRecords.length === 0}
-                className="rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Export all records as JSON
-              </button>
-              {recordSections.map((section) => {
-                const records = recordsBySection[section.key];
-
-                return (
+            <div className="grid gap-4 lg:min-w-[32rem]">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  JSON
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <button
-                    key={section.key}
                     type="button"
-                    onClick={() => handleExportRecords(section.key, records)}
-                    disabled={isLoading || records.length === 0}
-                    className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => handleExportRecords("all", allRecords)}
+                    disabled={isLoading || allRecords.length === 0}
+                    className="rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {section.key === "lead"
-                      ? "Export Lead records as JSON"
-                      : section.key === "recruitment"
-                        ? "Export Recruitment records as JSON"
-                        : "Export Document Intake records as JSON"}
+                    Export all records as JSON
                   </button>
-                );
-              })}
+                  {recordSections.map((section) => {
+                    const records = recordsBySection[section.key];
+
+                    return (
+                      <button
+                        key={section.key}
+                        type="button"
+                        onClick={() =>
+                          handleExportRecords(section.key, records)
+                        }
+                        disabled={isLoading || records.length === 0}
+                        className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {section.key === "lead"
+                          ? "Export Lead records as JSON"
+                          : section.key === "recruitment"
+                            ? "Export Recruitment records as JSON"
+                            : "Export Document Intake records as JSON"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  CSV
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => handleExportCsvRecords("all", allRecords)}
+                    disabled={isLoading || allRecords.length === 0}
+                    className="rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Export all records as CSV
+                  </button>
+                  {recordSections.map((section) => {
+                    const records = recordsBySection[section.key];
+
+                    return (
+                      <button
+                        key={section.key}
+                        type="button"
+                        onClick={() =>
+                          handleExportCsvRecords(section.key, records)
+                        }
+                        disabled={isLoading || records.length === 0}
+                        className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {section.key === "lead"
+                          ? "Export Lead records as CSV"
+                          : section.key === "recruitment"
+                            ? "Export Recruitment records as CSV"
+                            : "Export Document Intake records as CSV"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </section>
