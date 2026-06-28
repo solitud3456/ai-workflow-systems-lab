@@ -198,3 +198,12 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Confirmed live Vercel API routes still return Supabase records.
 - Confirmed live DELETE behavior works when internal tools are enabled.
 - Created checkpoint tag `v10-api-delete-guard`.
+
+## Workflow dashboard added
+
+- Added public `/workflow-dashboard` page.
+- Summarizes Lead Follow-up, Recruitment Workflow, and Document Intake workflows.
+- Shows workflow descriptions, storage model, human review step, and demo links.
+- Fetches or displays Supabase-backed workflow metrics where available.
+- Keeps the tone as a workflow lab, not a production SaaS claim.
+- Created checkpoint tag `v11-workflow-dashboard`.
