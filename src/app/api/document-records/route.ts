@@ -1,8 +1,10 @@
 import {
+  areInternalToolsEnabled,
   deleteDemoRecord,
   getConfigErrorStatus,
   getErrorMessage,
   getRequestRecords,
+  internalToolsDisabledResponse,
   jsonError,
   loadDemoRecords,
   mapIncomingDemoRecord,
@@ -40,6 +42,10 @@ export async function GET() {
 }
 
 export async function DELETE(request: Request) {
+  if (!areInternalToolsEnabled()) {
+    return internalToolsDisabledResponse();
+  }
+
   const id = new URL(request.url).searchParams.get("id")?.trim();
 
   if (!id) {
