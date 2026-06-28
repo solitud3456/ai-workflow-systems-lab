@@ -48,6 +48,11 @@ type ReviewDraft = {
   analysis_approved: boolean;
 };
 
+type ReviewUpdate = {
+  status?: string;
+  analysis_approved?: boolean;
+};
+
 type DraftsByRecord = Record<string, ReviewDraft>;
 type ErrorsByWorkflow = Partial<Record<WorkflowKey, string>>;
 type ActionMessage = {
@@ -261,34 +266,57 @@ async function fetchWorkflowRecords(workflow: Workflow): Promise<DemoRecord[]> {
   );
 }
 
-async function updateReviewRecord(record: DemoRecord, draft: ReviewDraft) {
+function getApiEndpointForDemoType(record: DemoRecord) {
+  if (record.demo_type === "lead_follow_up") {
+    return "/api/lead-records";
+  }
+
+  if (record.demo_type === "recruitment_assistant") {
+    return "/api/recruitment-records";
+  }
+
+  if (record.demo_type === "document_intake") {
+    return "/api/document-records";
+  }
+
+  return record.apiEndpoint;
+}
+
+async function updateReviewRecord(record: DemoRecord, updates: ReviewUpdate) {
+  const requestBody: ReviewUpdate = {};
+
+  if (updates.status !== undefined) {
+    requestBody.status = updates.status.trim();
+  }
+
+  if (updates.analysis_approved !== undefined) {
+    requestBody.analysis_approved = updates.analysis_approved;
+  }
+
   const response = await fetch(
-    `${record.apiEndpoint}?id=${encodeURIComponent(record.id)}`,
+    `${getApiEndpointForDemoType(record)}?id=${encodeURIComponent(record.id)}`,
     {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        status: draft.status.trim(),
-        analysis_approved: draft.analysis_approved,
-      }),
+      body: JSON.stringify(requestBody),
     },
   );
 
-  let body: unknown;
+  let responseBody: unknown;
 
   try {
-    body = await response.json();
+    responseBody = await response.json();
   } catch {
     throw new Error("The API response was not valid JSON.");
   }
 
   if (!response.ok) {
-    throw new Error(getApiError(body, "The update request failed."));
+    throw new Error(getApiError(responseBody, "The update request failed."));
   }
 
-  if (!isObjectRecord(body) || body.ok !== true) {
+  if (!isObjectRecord(responseBody) || responseBody.ok !== true) {
     throw new Error("The API response did not confirm the update action.");
   }
 }
@@ -333,15 +361,19 @@ function QueueMetric({
 function ReviewQueueCard({
   record,
   draft,
+  isSelected,
   isSaving,
   onDraftChange,
   onSave,
+  onSelectedChange,
 }: {
   record: DemoRecord;
   draft: ReviewDraft;
+  isSelected: boolean;
   isSaving: boolean;
   onDraftChange: (updates: Partial<ReviewDraft>) => void;
   onSave: () => void;
+  onSelectedChange: (selected: boolean) => void;
 }) {
   const nextStatus = draft.status.trim();
   const hasChanges =
@@ -351,28 +383,41 @@ function ReviewQueueCard({
   return (
     <article className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200">
-              {record.workflowLabel}
-            </span>
-            <span
-              className={
-                record.analysis_approved
-                  ? "rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300"
-                  : "rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300"
-              }
-            >
-              {record.analysis_approved ? "Approved" : "Needs review"}
-            </span>
-          </div>
+        <div className="flex gap-3">
+          <label className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center">
+            <span className="sr-only">Select {record.title}</span>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(event) => onSelectedChange(event.target.checked)}
+              disabled={isSaving}
+              className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </label>
 
-          <h3 className="mt-3 text-lg font-semibold text-white">
-            {record.title}
-          </h3>
-          <p className="mt-1 text-sm text-slate-400">
-            Source: {record.source || "Not set"}
-          </p>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200">
+                {record.workflowLabel}
+              </span>
+              <span
+                className={
+                  record.analysis_approved
+                    ? "rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300"
+                    : "rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300"
+                }
+              >
+                {record.analysis_approved ? "Approved" : "Needs review"}
+              </span>
+            </div>
+
+            <h3 className="mt-3 text-lg font-semibold text-white">
+              {record.title}
+            </h3>
+            <p className="mt-1 text-sm text-slate-400">
+              Source: {record.source || "Not set"}
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-2 text-sm sm:grid-cols-2 lg:min-w-80">
@@ -457,6 +502,9 @@ export default function ReviewQueueClient() {
   const [lastLoadedAt, setLastLoadedAt] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<ActionMessage>(null);
   const [savingRecordKey, setSavingRecordKey] = useState<string | null>(null);
+  const [selectedRecordKeys, setSelectedRecordKeys] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
   const [workflowFilter, setWorkflowFilter] =
     useState<WorkflowFilter>("all");
   const [approvalFilter, setApprovalFilter] =
@@ -506,6 +554,23 @@ export default function ReviewQueueClient() {
     });
   }, [approvalFilter, records, searchTerm, statusFilter, workflowFilter]);
 
+  const selectedRecordKeySet = useMemo(
+    () => new Set(selectedRecordKeys),
+    [selectedRecordKeys],
+  );
+  const selectedRecords = useMemo(
+    () =>
+      records.filter((record) => selectedRecordKeySet.has(record.queueKey)),
+    [records, selectedRecordKeySet],
+  );
+  const selectedVisibleCount = filteredRecords.filter((record) =>
+    selectedRecordKeySet.has(record.queueKey),
+  ).length;
+  const allVisibleSelected =
+    filteredRecords.length > 0 &&
+    selectedVisibleCount === filteredRecords.length;
+  const hasSelectedRecords = selectedRecords.length > 0;
+  const isAnySaving = Boolean(savingRecordKey) || isBulkSaving;
   const approvedCount = records.filter(
     (record) => record.analysis_approved,
   ).length;
@@ -549,6 +614,7 @@ export default function ReviewQueueClient() {
 
     setRecords(nextRecords);
     setDrafts(buildDrafts(nextRecords));
+    setSelectedRecordKeys([]);
     setErrorsByWorkflow(nextErrors);
     setStatusFilter((current) =>
       current === "all" || nextStatuses.has(current) ? current : "all",
@@ -568,6 +634,38 @@ export default function ReviewQueueClient() {
       }));
     },
     [],
+  );
+
+  const handleSelectRecord = useCallback(
+    (record: DemoRecord, selected: boolean) => {
+      setSelectedRecordKeys((currentKeys) => {
+        if (selected) {
+          return currentKeys.includes(record.queueKey)
+            ? currentKeys
+            : [...currentKeys, record.queueKey];
+        }
+
+        return currentKeys.filter((key) => key !== record.queueKey);
+      });
+    },
+    [],
+  );
+
+  const handleSelectAllVisible = useCallback(
+    (selected: boolean) => {
+      const visibleKeys = filteredRecords.map((record) => record.queueKey);
+
+      setSelectedRecordKeys((currentKeys) => {
+        if (selected) {
+          return Array.from(new Set([...currentKeys, ...visibleKeys]));
+        }
+
+        const visibleKeySet = new Set(visibleKeys);
+
+        return currentKeys.filter((key) => !visibleKeySet.has(key));
+      });
+    },
+    [filteredRecords],
   );
 
   const handleSaveRecord = useCallback(
@@ -606,6 +704,102 @@ export default function ReviewQueueClient() {
       }
     },
     [drafts, loadRecords],
+  );
+
+  const handleBulkUpdate = useCallback(
+    async (updates: ReviewUpdate, actionLabel: string) => {
+      if (selectedRecords.length === 0) {
+        setActionMessage({
+          kind: "error",
+          text: "Select at least one record before applying a bulk action.",
+        });
+        return;
+      }
+
+      const nextUpdates: ReviewUpdate = {};
+
+      if (updates.status !== undefined) {
+        const nextStatus = updates.status.trim();
+
+        if (!nextStatus) {
+          setActionMessage({
+            kind: "error",
+            text: "Bulk status cannot be blank.",
+          });
+          return;
+        }
+
+        nextUpdates.status = nextStatus;
+      }
+
+      if (updates.analysis_approved !== undefined) {
+        nextUpdates.analysis_approved = updates.analysis_approved;
+      }
+
+      if (Object.keys(nextUpdates).length === 0) {
+        setActionMessage({
+          kind: "error",
+          text: "Choose a bulk action before saving.",
+        });
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Apply "${actionLabel}" to ${selectedRecords.length} selected record${
+          selectedRecords.length === 1 ? "" : "s"
+        }?`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setActionMessage(null);
+      setIsBulkSaving(true);
+
+      const results = await Promise.all(
+        selectedRecords.map(async (record) => {
+          try {
+            await updateReviewRecord(record, nextUpdates);
+
+            return {
+              ok: true as const,
+              title: record.title,
+              error: null,
+            };
+          } catch (error) {
+            return {
+              ok: false as const,
+              title: record.title,
+              error: getErrorMessage(error),
+            };
+          }
+        }),
+      );
+
+      const updatedCount = results.filter((result) => result.ok).length;
+      const failedResults = results.filter((result) => !result.ok);
+      const failedCount = failedResults.length;
+      const firstFailure = failedResults[0];
+
+      setActionMessage({
+        kind: failedCount > 0 ? "error" : "success",
+        text:
+          failedCount > 0
+            ? `Bulk update finished: ${updatedCount} updated, ${failedCount} failed.${
+                firstFailure
+                  ? ` First failure: ${firstFailure.title} - ${firstFailure.error}`
+                  : ""
+              }`
+            : `Bulk update complete: ${updatedCount} record${
+                updatedCount === 1 ? "" : "s"
+              } updated.`,
+      });
+
+      setIsBulkSaving(false);
+      await loadRecords();
+    },
+    [loadRecords, selectedRecords],
   );
 
   useEffect(() => {
@@ -762,6 +956,111 @@ export default function ReviewQueueClient() {
           </div>
         </section>
 
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-white">
+                Bulk review actions
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Apply approval or status updates to selected records. Each
+                record still saves through its own workflow API route.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm font-semibold text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  onChange={(event) =>
+                    handleSelectAllVisible(event.target.checked)
+                  }
+                  disabled={isAnySaving || filteredRecords.length === 0}
+                  className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+                />
+                Select all visible
+              </label>
+
+              <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-cyan-200">
+                {selectedRecords.length} selected
+              </span>
+              {selectedVisibleCount !== selectedRecords.length ? (
+                <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-slate-400">
+                  {selectedVisibleCount} visible selected
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-[auto_auto_1fr_auto] lg:items-end">
+            <button
+              type="button"
+              onClick={() =>
+                void handleBulkUpdate(
+                  {
+                    analysis_approved: true,
+                  },
+                  "mark selected as approved",
+                )
+              }
+              disabled={!hasSelectedRecords || isAnySaving}
+              className="rounded-lg border border-emerald-400/50 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:border-emerald-300 hover:text-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Mark selected as approved
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                void handleBulkUpdate(
+                  {
+                    analysis_approved: false,
+                  },
+                  "mark selected as not approved",
+                )
+              }
+              disabled={!hasSelectedRecords || isAnySaving}
+              className="rounded-lg border border-amber-400/50 px-4 py-2 text-sm font-semibold text-amber-200 transition hover:border-amber-300 hover:text-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Mark selected as not approved
+            </button>
+
+            <label className="text-sm font-semibold text-slate-200">
+              Bulk status
+              <input
+                type="text"
+                value={bulkStatus}
+                onChange={(event) => setBulkStatus(event.target.value)}
+                list="review-queue-status-options"
+                placeholder="Enter status"
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+              />
+              <datalist id="review-queue-status-options">
+                {statusOptions.map((status) => (
+                  <option key={status} value={status} />
+                ))}
+              </datalist>
+            </label>
+
+            <button
+              type="button"
+              onClick={() =>
+                void handleBulkUpdate(
+                  {
+                    status: bulkStatus,
+                  },
+                  `set selected status to "${bulkStatus.trim()}"`,
+                )
+              }
+              disabled={!hasSelectedRecords || isAnySaving || !bulkStatus.trim()}
+              className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isBulkSaving ? "Applying..." : "Set selected status"}
+            </button>
+          </div>
+        </section>
+
         {actionMessage ? (
           <p
             className={
@@ -822,11 +1121,15 @@ export default function ReviewQueueClient() {
                   key={record.queueKey}
                   record={record}
                   draft={drafts[record.queueKey] ?? buildDraft(record)}
-                  isSaving={savingRecordKey === record.queueKey}
+                  isSelected={selectedRecordKeySet.has(record.queueKey)}
+                  isSaving={savingRecordKey === record.queueKey || isBulkSaving}
                   onDraftChange={(updates) =>
                     handleDraftChange(record, updates)
                   }
                   onSave={() => void handleSaveRecord(record)}
+                  onSelectedChange={(selected) =>
+                    handleSelectRecord(record, selected)
+                  }
                 />
               ))}
             </div>
