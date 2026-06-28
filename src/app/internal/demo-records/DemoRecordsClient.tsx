@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 
@@ -856,6 +857,12 @@ export default function DemoRecordsClient() {
             >
               {isLoading ? "Loading..." : "Refresh records"}
             </button>
+            <Link
+              href="/internal/review-queue"
+              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
+            >
+              Open review queue
+            </Link>
             <p className="mt-3 text-xs leading-5 text-slate-400">
               {lastLoadedAt
                 ? `Last refreshed: ${lastLoadedAt}`
