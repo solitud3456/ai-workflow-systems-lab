@@ -1,6 +1,31 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 
+const systemWorkflowPoints = [
+  "Each demo starts with messy intake: customer inquiries, candidate notes, or pasted document text.",
+  "The app stores working records in localStorage so the browser remains the main demo workspace.",
+  "Users generate a structured manual AI prompt, copy it into an AI tool, and paste strict JSON back into the app.",
+  "Saved AI analysis is treated as draft support until a human marks it as reviewed.",
+  "Optional Supabase sync stores records through internal API routes instead of direct browser database writes.",
+  "The public workflow dashboard summarizes all three systems and their optional synced-record metrics.",
+  "The internal records viewer helps inspect saved Supabase records during development and cleanup.",
+];
+
+const systemProofPoints = [
+  "The project shows one repeatable AI workflow pattern across sales follow-up, recruitment screening, and document intake.",
+  "The workflow keeps AI output structured, saved, reviewable, and visible in dashboard metrics.",
+  "The database layer is optional persistence rather than the main demo workspace.",
+  "The architecture avoids exposing database keys in the browser by routing Supabase writes through server API routes.",
+  "The public pages stay honest about what is built now and what still belongs in future production work.",
+];
+
+const systemLimitations = [
+  "Manual AI mode only: users still copy prompts into ChatGPT or Claude and paste JSON results back.",
+  "No authentication yet, so this is not a private multi-user product.",
+  "Supabase sync is optional persistence for the portfolio lab, not a full production data model.",
+  "The demos are not production-ready SaaS and should not be used for sensitive live business data.",
+];
+
 const workflowSteps = [
   "Capture a messy customer inquiry as a structured lead record.",
   "Track the lead status, follow-up date, source, and internal notes.",
@@ -108,6 +133,107 @@ export default function CaseStudiesPage() {
           title="Proof of workflow thinking, not just screenshots."
           description="Each case study explains the business problem, manual process, AI-assisted workflow, data model, human review pattern, limitations, and future automation path."
         />
+
+        <article className="mt-10">
+          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-6">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
+                  System case study
+                </span>
+                <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white">
+                  Manual AI workflow systems with optional database sync
+                </h2>
+                <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
+                  This case study explains the current portfolio system as a
+                  whole: three manual-AI workflow demos, browser-based working
+                  state, optional Supabase persistence, human review before
+                  approval, and dashboard visibility across the workflows.
+                </p>
+              </div>
+
+              <Link
+                href="/workflow-dashboard"
+                className="w-fit shrink-0 rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+              >
+                View workflow dashboard
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">
+                What the system proves
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {systemProofPoints.map((point) => (
+                  <li key={point} className="text-sm leading-6 text-slate-400">
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h3 className="text-lg font-semibold text-white">
+                Current limits
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {systemLimitations.map((item) => (
+                  <li key={item} className="text-sm leading-6 text-slate-400">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+
+          <section className="mt-8">
+            <h3 className="text-lg font-semibold text-white">
+              Shared workflow architecture
+            </h3>
+            <ol className="mt-4 grid gap-3 md:grid-cols-2">
+              {systemWorkflowPoints.map((step, index) => (
+                <li
+                  key={step}
+                  className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm leading-6 text-slate-300"
+                >
+                  <span className="mr-2 font-semibold text-cyan-300">
+                    {index + 1}.
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+            <h3 className="text-lg font-semibold text-white">
+              Explore the working demos
+            </h3>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href="/demos/lead-follow-up"
+                className="rounded-full border border-cyan-400/60 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+              >
+                Lead Follow-up Assistant
+              </Link>
+              <Link
+                href="/demos/recruitment-assistant"
+                className="rounded-full border border-cyan-400/60 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+              >
+                Recruitment Workflow Assistant
+              </Link>
+              <Link
+                href="/demos/document-intake"
+                className="rounded-full border border-cyan-400/60 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+              >
+                Document Intake Assistant
+              </Link>
+            </div>
+          </section>
+        </article>
 
         <article className="mt-10">
           <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-6">
