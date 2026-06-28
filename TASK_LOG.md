@@ -233,3 +233,13 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Exported JSON includes demo type, title, status, source, raw input, analysis, approval state, and timestamps.
 - Confirmed no Supabase keys or environment values are included in exported data.
 - Created checkpoint tag `v13-internal-records-export`.
+
+## Internal demo records CSV export added
+
+- Added CSV export buttons to `/internal/demo-records`.
+- Added CSV export for all records.
+- Added CSV export for Lead, Recruitment, and Document Intake records separately.
+- Kept existing JSON export behavior.
+- CSV exports include demo type, title, status, source, approval state, timestamps, raw input, and analysis.
+- Confirmed exported CSV files do not include Supabase keys or environment values.
+- Created checkpoint tag `v14-internal-records-csv-export`.
