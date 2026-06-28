@@ -93,6 +93,12 @@ export default function DemosPage() {
             </span>
             , paste it into the AI JSON result box, and save the analysis.
           </p>
+          <Link
+            href="/workflow-dashboard"
+            className="mt-4 inline-flex rounded-full border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+          >
+            View workflow dashboard
+          </Link>
         </aside>
 
         <section className="mt-10 rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-6">
