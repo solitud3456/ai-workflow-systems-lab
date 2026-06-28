@@ -223,3 +223,13 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Linked to the workflow dashboard and all three demos.
 - Avoided claiming the project is a production SaaS.
 - Created checkpoint tag `v12-workflow-systems-case-study`.
+
+## Internal demo records export added
+
+- Added JSON export buttons to `/internal/demo-records`.
+- Added export for all records.
+- Added export for Lead, Recruitment, and Document Intake records separately.
+- Exports use records already loaded in the browser.
+- Exported JSON includes demo type, title, status, source, raw input, analysis, approval state, and timestamps.
+- Confirmed no Supabase keys or environment values are included in exported data.
+- Created checkpoint tag `v13-internal-records-export`.
