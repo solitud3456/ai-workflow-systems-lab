@@ -188,6 +188,40 @@ function formatDate(value: string | null) {
   return date.toLocaleString();
 }
 
+function formatSummaryDate(value: string | null) {
+  if (!value) {
+    return "No records yet";
+  }
+
+  return formatDate(value);
+}
+
+function getRecordDate(record: DemoRecord) {
+  return record.updated_at || record.created_at || null;
+}
+
+function getLatestUpdatedAt(records: DemoRecord[]) {
+  let latestTime = 0;
+  let latestValue: string | null = null;
+
+  records.forEach((record) => {
+    const value = getRecordDate(record);
+
+    if (!value) {
+      return;
+    }
+
+    const time = new Date(value).getTime();
+
+    if (!Number.isNaN(time) && time > latestTime) {
+      latestTime = time;
+      latestValue = value;
+    }
+  });
+
+  return latestValue;
+}
+
 function formatJsonDetails(record: DemoRecord) {
   return JSON.stringify(
     {
@@ -292,6 +326,23 @@ function buildExportFileName(scope: string, extension: "csv" | "json") {
   return `demo-records-${scope}-${date}.${extension}`;
 }
 
+function SummaryCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-3 text-2xl font-semibold text-white">{value}</p>
+    </div>
+  );
+}
+
 function RecordCard({
   record,
   isDeleting,
@@ -376,6 +427,36 @@ export default function DemoRecordsClient() {
   const allRecords = recordSections.flatMap(
     (section) => recordsBySection[section.key],
   );
+  const approvedAnalysisCount = allRecords.filter(
+    (record) => record.analysis_approved,
+  ).length;
+  const latestUpdatedAt = getLatestUpdatedAt(allRecords);
+  const summaryValues = [
+    {
+      label: "Total records",
+      value: isLoading ? "Loading" : allRecords.length,
+    },
+    {
+      label: "Lead records",
+      value: isLoading ? "Loading" : recordsBySection.lead.length,
+    },
+    {
+      label: "Recruitment records",
+      value: isLoading ? "Loading" : recordsBySection.recruitment.length,
+    },
+    {
+      label: "Document records",
+      value: isLoading ? "Loading" : recordsBySection.document.length,
+    },
+    {
+      label: "Approved analyses",
+      value: isLoading ? "Loading" : approvedAnalysisCount,
+    },
+    {
+      label: "Latest update",
+      value: isLoading ? "Loading" : formatSummaryDate(latestUpdatedAt),
+    },
+  ];
 
   const loadRecords = useCallback(async () => {
     setIsLoading(true);
@@ -537,6 +618,30 @@ export default function DemoRecordsClient() {
             touch browser localStorage, add auth, change RLS, or connect
             directly to Supabase from the browser.
           </p>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-white">
+                Database summary
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Counts are calculated from the records currently loaded on this
+                page.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {summaryValues.map((item) => (
+              <SummaryCard
+                key={item.label}
+                label={item.label}
+                value={item.value}
+              />
+            ))}
+          </div>
         </section>
 
         <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
