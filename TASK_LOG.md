@@ -207,3 +207,9 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Fetches or displays Supabase-backed workflow metrics where available.
 - Keeps the tone as a workflow lab, not a production SaaS claim.
 - Created checkpoint tag `v11-workflow-dashboard`.
+
+## Workflow dashboard featured on homepage
+
+- Added a homepage link/CTA to `/workflow-dashboard`.
+- Made the workflow dashboard easier for visitors to discover.
+- Kept demo behavior and API behavior unchanged.
