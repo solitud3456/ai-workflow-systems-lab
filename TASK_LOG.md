@@ -253,3 +253,14 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Shows latest updated date across loaded records.
 - Kept existing JSON export, CSV export, and delete behavior unchanged.
 - Created checkpoint tag `v15-internal-records-summary`.
+
+## Workflow dashboard metrics improved
+
+- Improved `/workflow-dashboard` with stronger summary metrics.
+- Added total saved Supabase records.
+- Added per-workflow saved record counts.
+- Added total approved analyses.
+- Added latest updated date where available.
+- Kept the dashboard public and portfolio-friendly.
+- Did not expose internal delete/export tools.
+- Created checkpoint tag `v16-workflow-dashboard-metrics`.
