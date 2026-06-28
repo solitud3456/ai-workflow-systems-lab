@@ -17,6 +17,22 @@ export type DemoRecordInsert = {
   analysis_approved: boolean;
 };
 
+export type DemoRecordUpdate = {
+  title?: string;
+  status?: string;
+  source?: string | null;
+  analysis_approved?: boolean;
+  internal_notes?: string | null;
+};
+
+const SAFE_UPDATE_FIELDS = [
+  "title",
+  "status",
+  "source",
+  "analysis_approved",
+  "internal_notes",
+] as const;
+
 export function isObjectRecord(
   value: unknown,
 ): value is Record<string, unknown> {
@@ -86,6 +102,74 @@ export function mapIncomingDemoRecord(
 
 export function jsonError(message: string, status: number) {
   return Response.json({ ok: false, error: message }, { status });
+}
+
+export function mapDemoRecordUpdateBody(
+  body: unknown,
+): DemoRecordUpdate | Response {
+  if (!isObjectRecord(body)) {
+    return jsonError("Request body must be a JSON object.", 400);
+  }
+
+  const unsafeFields = Object.keys(body).filter(
+    (field) =>
+      !SAFE_UPDATE_FIELDS.includes(field as (typeof SAFE_UPDATE_FIELDS)[number]),
+  );
+
+  if (unsafeFields.length > 0) {
+    return jsonError(
+      `Unsupported update field: ${unsafeFields.join(", ")}`,
+      400,
+    );
+  }
+
+  const updates: DemoRecordUpdate = {};
+
+  if ("title" in body) {
+    if (typeof body.title !== "string") {
+      return jsonError("title must be a string.", 400);
+    }
+
+    updates.title = body.title;
+  }
+
+  if ("status" in body) {
+    if (typeof body.status !== "string") {
+      return jsonError("status must be a string.", 400);
+    }
+
+    updates.status = body.status;
+  }
+
+  if ("source" in body) {
+    if (typeof body.source !== "string" && body.source !== null) {
+      return jsonError("source must be a string or null.", 400);
+    }
+
+    updates.source = body.source;
+  }
+
+  if ("analysis_approved" in body) {
+    if (typeof body.analysis_approved !== "boolean") {
+      return jsonError("analysis_approved must be a boolean.", 400);
+    }
+
+    updates.analysis_approved = body.analysis_approved;
+  }
+
+  if ("internal_notes" in body) {
+    if (typeof body.internal_notes !== "string" && body.internal_notes !== null) {
+      return jsonError("internal_notes must be a string or null.", 400);
+    }
+
+    updates.internal_notes = body.internal_notes;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return jsonError("At least one supported update field is required.", 400);
+  }
+
+  return updates;
 }
 
 export function internalToolsDisabledResponse() {
@@ -164,4 +248,20 @@ export async function deleteDemoRecord(demoType: string, id: string) {
     .delete()
     .eq("demo_type", demoType)
     .eq("id", id);
+}
+
+export async function updateDemoRecord(
+  demoType: string,
+  id: string,
+  updates: DemoRecordUpdate,
+) {
+  const supabase = getSupabaseAdminClient();
+
+  return supabase
+    .from("demo_records")
+    .update(updates)
+    .eq("demo_type", demoType)
+    .eq("id", id)
+    .select(DEMO_RECORD_SELECT)
+    .maybeSingle();
 }

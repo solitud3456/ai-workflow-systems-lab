@@ -42,11 +42,20 @@ type DemoRecord = {
   title: string;
   status: string;
   source: string | null;
+  internal_notes: string | null;
   raw_input: unknown;
   analysis: unknown;
   analysis_approved: boolean;
   created_at: string | null;
   updated_at: string | null;
+};
+
+type EditFormState = {
+  title: string;
+  status: string;
+  source: string;
+  analysis_approved: boolean;
+  internal_notes: string;
 };
 
 type RecordsBySection = Record<SectionKey, DemoRecord[]>;
@@ -85,6 +94,7 @@ function normalizeDemoRecord(value: unknown, index: number): DemoRecord {
     title: getString(record.title, "Untitled record"),
     status: getString(record.status, "Unknown"),
     source: getNullableString(record.source),
+    internal_notes: getNullableString(record.internal_notes),
     raw_input: record.raw_input ?? null,
     analysis: record.analysis ?? null,
     analysis_approved:
@@ -93,6 +103,26 @@ function normalizeDemoRecord(value: unknown, index: number): DemoRecord {
         : false,
     created_at: getNullableString(record.created_at),
     updated_at: getNullableString(record.updated_at),
+  };
+}
+
+function buildEditForm(record: DemoRecord): EditFormState {
+  return {
+    title: record.title,
+    status: record.status,
+    source: record.source ?? "",
+    analysis_approved: record.analysis_approved,
+    internal_notes: record.internal_notes ?? "",
+  };
+}
+
+function buildUpdatePayload(form: EditFormState) {
+  return {
+    title: form.title,
+    status: form.status,
+    source: form.source.trim() ? form.source : null,
+    analysis_approved: form.analysis_approved,
+    internal_notes: form.internal_notes.trim() ? form.internal_notes : null,
   };
 }
 
@@ -159,6 +189,36 @@ async function deleteRecordFromApi(endpoint: string, id: string) {
 
   if (!isObjectRecord(body) || body.ok !== true) {
     throw new Error("The API response did not confirm the delete action.");
+  }
+}
+
+async function updateRecordInApi(
+  endpoint: string,
+  id: string,
+  updates: ReturnType<typeof buildUpdatePayload>,
+) {
+  const response = await fetch(`${endpoint}?id=${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updates),
+  });
+
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The API response was not valid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(getApiError(body, "The update request failed."));
+  }
+
+  if (!isObjectRecord(body) || body.ok !== true) {
+    throw new Error("The API response did not confirm the update action.");
   }
 }
 
@@ -345,12 +405,26 @@ function SummaryCard({
 
 function RecordCard({
   record,
+  editForm,
   isDeleting,
+  isEditing,
+  isSaving,
+  onCancelEdit,
   onDelete,
+  onEdit,
+  onEditFormChange,
+  onSaveEdit,
 }: {
   record: DemoRecord;
+  editForm: EditFormState | null;
   isDeleting: boolean;
+  isEditing: boolean;
+  isSaving: boolean;
+  onCancelEdit: () => void;
   onDelete: () => void;
+  onEdit: () => void;
+  onEditFormChange: (updates: Partial<EditFormState>) => void;
+  onSaveEdit: () => void;
 }) {
   return (
     <article className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
@@ -379,8 +453,16 @@ function RecordCard({
           </span>
           <button
             type="button"
+            onClick={onEdit}
+            disabled={isDeleting || isSaving}
+            className="rounded-full border border-cyan-400/40 px-3 py-1 text-xs font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
             onClick={onDelete}
-            disabled={isDeleting}
+            disabled={isDeleting || isSaving}
             className="rounded-full border border-rose-400/40 px-3 py-1 text-xs font-semibold text-rose-200 transition hover:border-rose-300 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isDeleting ? "Deleting..." : "Delete"}
@@ -403,6 +485,105 @@ function RecordCard({
         </div>
       </dl>
 
+      {isEditing && editForm ? (
+        <div className="mt-4 rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="text-sm font-semibold text-slate-200">
+              Title
+              <input
+                type="text"
+                value={editForm.title}
+                onChange={(event) =>
+                  onEditFormChange({
+                    title: event.target.value,
+                  })
+                }
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
+
+            <label className="text-sm font-semibold text-slate-200">
+              Status
+              <input
+                type="text"
+                value={editForm.status}
+                onChange={(event) =>
+                  onEditFormChange({
+                    status: event.target.value,
+                  })
+                }
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
+
+            <label className="text-sm font-semibold text-slate-200">
+              Source
+              <input
+                type="text"
+                value={editForm.source}
+                onChange={(event) =>
+                  onEditFormChange({
+                    source: event.target.value,
+                  })
+                }
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
+
+            <label className="flex items-center gap-3 pt-7 text-sm font-semibold text-slate-200">
+              <input
+                type="checkbox"
+                checked={editForm.analysis_approved}
+                onChange={(event) =>
+                  onEditFormChange({
+                    analysis_approved: event.target.checked,
+                  })
+                }
+                className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400"
+              />
+              analysis_approved
+            </label>
+          </div>
+
+          <label className="mt-4 block text-sm font-semibold text-slate-200">
+            Internal notes
+            <textarea
+              value={editForm.internal_notes}
+              onChange={(event) =>
+                onEditFormChange({
+                  internal_notes: event.target.value,
+                })
+              }
+              rows={3}
+              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+            />
+          </label>
+
+          <p className="mt-3 text-xs leading-5 text-slate-400">
+            Saves only this Supabase record. Demo localStorage is not changed.
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={onSaveEdit}
+              disabled={isSaving}
+              className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSaving ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              disabled={isSaving}
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <details className="mt-4 rounded-lg border border-slate-800 bg-slate-950/70 p-3">
         <summary className="cursor-pointer text-sm font-semibold text-cyan-200">
           JSON details
@@ -423,6 +604,9 @@ export default function DemoRecordsClient() {
   const [lastLoadedAt, setLastLoadedAt] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<ActionMessage>(null);
   const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<EditFormState | null>(null);
+  const [savingRecordId, setSavingRecordId] = useState<string | null>(null);
 
   const allRecords = recordSections.flatMap(
     (section) => recordsBySection[section.key],
@@ -509,6 +693,11 @@ export default function DemoRecordsClient() {
         return;
       }
 
+      if (editingRecordId === record.id) {
+        setEditingRecordId(null);
+        setEditForm(null);
+      }
+
       setActionMessage(null);
       setDeletingRecordId(record.id);
 
@@ -528,7 +717,74 @@ export default function DemoRecordsClient() {
         setDeletingRecordId(null);
       }
     },
-    [loadRecords],
+    [editingRecordId, loadRecords],
+  );
+
+  const handleStartEdit = useCallback((record: DemoRecord) => {
+    setActionMessage(null);
+    setEditingRecordId(record.id);
+    setEditForm(buildEditForm(record));
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingRecordId(null);
+    setEditForm(null);
+  }, []);
+
+  const handleEditFormChange = useCallback(
+    (updates: Partial<EditFormState>) => {
+      setEditForm((current) =>
+        current
+          ? {
+              ...current,
+              ...updates,
+            }
+          : current,
+      );
+    },
+    [],
+  );
+
+  const handleSaveEdit = useCallback(
+    async (section: RecordSection, record: DemoRecord) => {
+      if (!editForm || editingRecordId !== record.id) {
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Save changes to "${record.title}" in Supabase? This does not update localStorage demo data.`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setActionMessage(null);
+      setSavingRecordId(record.id);
+
+      try {
+        await updateRecordInApi(
+          section.endpoint,
+          record.id,
+          buildUpdatePayload(editForm),
+        );
+        setActionMessage({
+          kind: "success",
+          text: `Updated "${editForm.title || record.title}" in Supabase.`,
+        });
+        setEditingRecordId(null);
+        setEditForm(null);
+        await loadRecords();
+      } catch (error) {
+        setActionMessage({
+          kind: "error",
+          text: getErrorMessage(error),
+        });
+      } finally {
+        setSavingRecordId(null);
+      }
+    },
+    [editForm, editingRecordId, loadRecords],
   );
 
   const handleExportRecords = useCallback(
@@ -793,8 +1049,17 @@ export default function DemoRecordsClient() {
                       <RecordCard
                         key={record.id}
                         record={record}
+                        editForm={
+                          editingRecordId === record.id ? editForm : null
+                        }
                         isDeleting={deletingRecordId === record.id}
+                        isEditing={editingRecordId === record.id}
+                        isSaving={savingRecordId === record.id}
+                        onCancelEdit={handleCancelEdit}
                         onDelete={() => void handleDeleteRecord(section, record)}
+                        onEdit={() => handleStartEdit(record)}
+                        onEditFormChange={handleEditFormChange}
+                        onSaveEdit={() => void handleSaveEdit(section, record)}
                       />
                     ))}
                   </div>

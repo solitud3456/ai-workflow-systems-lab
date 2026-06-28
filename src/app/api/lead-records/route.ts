@@ -7,8 +7,10 @@ import {
   internalToolsDisabledResponse,
   jsonError,
   loadDemoRecords,
+  mapDemoRecordUpdateBody,
   mapIncomingDemoRecord,
   replaceDemoRecords,
+  updateDemoRecord,
   type DemoRecordInsert,
 } from "@/lib/demoRecordsApi";
 
@@ -61,6 +63,55 @@ export async function DELETE(request: Request) {
 
     return Response.json({
       ok: true,
+    });
+  } catch (error) {
+    return jsonError(getErrorMessage(error), getConfigErrorStatus(error));
+  }
+}
+
+export async function PATCH(request: Request) {
+  if (!areInternalToolsEnabled()) {
+    return internalToolsDisabledResponse();
+  }
+
+  const id = new URL(request.url).searchParams.get("id")?.trim();
+
+  if (!id) {
+    return jsonError("A record id is required.", 400);
+  }
+
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return jsonError("Request body must be valid JSON.", 400);
+  }
+
+  const updates = mapDemoRecordUpdateBody(body);
+
+  if (updates instanceof Response) {
+    return updates;
+  }
+
+  try {
+    const { data, error } = await updateDemoRecord(
+      LEAD_DEMO_TYPE,
+      id,
+      updates,
+    );
+
+    if (error) {
+      return jsonError(`Supabase update failed: ${error.message}`, 500);
+    }
+
+    if (!data) {
+      return jsonError("Record not found for this workflow.", 404);
+    }
+
+    return Response.json({
+      ok: true,
+      record: data,
     });
   } catch (error) {
     return jsonError(getErrorMessage(error), getConfigErrorStatus(error));
