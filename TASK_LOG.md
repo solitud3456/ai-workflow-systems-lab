@@ -264,3 +264,13 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Kept the dashboard public and portfolio-friendly.
 - Did not expose internal delete/export tools.
 - Created checkpoint tag `v16-workflow-dashboard-metrics`.
+
+## Internal workflow board added
+
+- Added `/internal/workflow-board`.
+- Shows saved records from Lead, Recruitment, and Document Intake grouped by status.
+- Added workflow and approval filters.
+- Added search across title, source, status, and analysis summary.
+- Added quick status update per record through existing PATCH API routes.
+- Linked internal workflow board with existing internal tools.
+- Created checkpoint tag `v19-internal-workflow-board`.
