@@ -26,6 +26,7 @@ type RecordSection = (typeof recordSections)[number];
 
 type DemoRecord = {
   id: string;
+  demo_type: string;
   title: string;
   status: string;
   source: string | null;
@@ -68,6 +69,7 @@ function normalizeDemoRecord(value: unknown, index: number): DemoRecord {
 
   return {
     id: getString(record.id, `record-${index}`),
+    demo_type: getString(record.demo_type, "unknown"),
     title: getString(record.title, "Untitled record"),
     status: getString(record.status, "Unknown"),
     source: getNullableString(record.source),
@@ -185,6 +187,40 @@ function formatJsonDetails(record: DemoRecord) {
   );
 }
 
+function buildExportRecord(record: DemoRecord) {
+  return {
+    demo_type: record.demo_type,
+    title: record.title,
+    status: record.status,
+    source: record.source,
+    raw_input: record.raw_input,
+    analysis: record.analysis,
+    analysis_approved: record.analysis_approved,
+    created_at: record.created_at,
+    updated_at: record.updated_at,
+  };
+}
+
+function downloadJsonFile(fileName: string, records: DemoRecord[]) {
+  const exportPayload = records.map(buildExportRecord);
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function buildExportFileName(scope: string) {
+  const date = new Date().toISOString().slice(0, 10);
+
+  return `demo-records-${scope}-${date}.json`;
+}
+
 function RecordCard({
   record,
   isDeleting,
@@ -266,6 +302,10 @@ export default function DemoRecordsClient() {
   const [actionMessage, setActionMessage] = useState<ActionMessage>(null);
   const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
 
+  const allRecords = recordSections.flatMap(
+    (section) => recordsBySection[section.key],
+  );
+
   const loadRecords = useCallback(async () => {
     setIsLoading(true);
     setErrorsBySection({});
@@ -339,6 +379,27 @@ export default function DemoRecordsClient() {
     [loadRecords],
   );
 
+  const handleExportRecords = useCallback(
+    (scope: string, records: DemoRecord[]) => {
+      if (records.length === 0) {
+        setActionMessage({
+          kind: "error",
+          text: "There are no loaded records to export for that selection.",
+        });
+        return;
+      }
+
+      downloadJsonFile(buildExportFileName(scope), records);
+      setActionMessage({
+        kind: "success",
+        text: `Exported ${records.length} ${
+          records.length === 1 ? "record" : "records"
+        } as JSON.`,
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void loadRecords();
@@ -384,6 +445,51 @@ export default function DemoRecordsClient() {
             touch browser localStorage, add auth, change RLS, or connect
             directly to Supabase from the browser.
           </p>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-white">
+                Export loaded records
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                Downloads JSON from the records currently loaded on this page.
+                Section exports are disabled when that workflow has no loaded
+                records.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[32rem]">
+              <button
+                type="button"
+                onClick={() => handleExportRecords("all", allRecords)}
+                disabled={isLoading || allRecords.length === 0}
+                className="rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Export all records as JSON
+              </button>
+              {recordSections.map((section) => {
+                const records = recordsBySection[section.key];
+
+                return (
+                  <button
+                    key={section.key}
+                    type="button"
+                    onClick={() => handleExportRecords(section.key, records)}
+                    disabled={isLoading || records.length === 0}
+                    className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {section.key === "lead"
+                      ? "Export Lead records as JSON"
+                      : section.key === "recruitment"
+                        ? "Export Recruitment records as JSON"
+                        : "Export Document Intake records as JSON"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         {actionMessage ? (
