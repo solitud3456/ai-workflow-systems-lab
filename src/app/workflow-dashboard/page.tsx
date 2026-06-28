@@ -135,6 +135,34 @@ function formatDate(value: string | null) {
   return date.toLocaleString();
 }
 
+function formatSummaryDate(value: string | null) {
+  if (!value) {
+    return "No synced records yet";
+  }
+
+  return formatDate(value);
+}
+
+function getLatestMetricDate(metrics: WorkflowMetric[]) {
+  let latestTime = 0;
+  let latestValue: string | null = null;
+
+  metrics.forEach((metric) => {
+    if (!metric.latestUpdatedAt) {
+      return;
+    }
+
+    const time = new Date(metric.latestUpdatedAt).getTime();
+
+    if (!Number.isNaN(time) && time > latestTime) {
+      latestTime = time;
+      latestValue = metric.latestUpdatedAt;
+    }
+  });
+
+  return latestValue;
+}
+
 async function fetchWorkflowMetric(
   endpoint: string,
 ): Promise<Omit<WorkflowMetric, "status" | "error">> {
@@ -186,10 +214,69 @@ function MetricBox({
   );
 }
 
+function SummaryBox({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </p>
+      <p className="mt-3 text-2xl font-semibold text-white">{value}</p>
+    </div>
+  );
+}
+
 export default function WorkflowDashboardPage() {
   const [metrics, setMetrics] =
     useState<MetricsByWorkflow>(buildInitialMetrics);
   const [lastLoadedAt, setLastLoadedAt] = useState<string | null>(null);
+  const workflowMetrics = workflows.map((workflow) => metrics[workflow.key]);
+  const isLoadingMetrics = workflowMetrics.some(
+    (metric) => metric.status === "loading",
+  );
+  const failedMetricCount = workflowMetrics.filter(
+    (metric) => metric.status === "error",
+  ).length;
+  const totalSavedRecords = workflowMetrics.reduce(
+    (total, metric) => total + metric.recordCount,
+    0,
+  );
+  const totalApprovedAnalyses = workflowMetrics.reduce(
+    (total, metric) => total + metric.approvedCount,
+    0,
+  );
+  const latestUpdatedAt = getLatestMetricDate(workflowMetrics);
+  const summaryValues = [
+    {
+      label: "Total saved records",
+      value: isLoadingMetrics ? "Loading" : totalSavedRecords,
+    },
+    {
+      label: "Lead records",
+      value: isLoadingMetrics ? "Loading" : metrics.lead.recordCount,
+    },
+    {
+      label: "Recruitment records",
+      value: isLoadingMetrics ? "Loading" : metrics.recruitment.recordCount,
+    },
+    {
+      label: "Document records",
+      value: isLoadingMetrics ? "Loading" : metrics.document.recordCount,
+    },
+    {
+      label: "Approved analyses",
+      value: isLoadingMetrics ? "Loading" : totalApprovedAnalyses,
+    },
+    {
+      label: "Latest update",
+      value: isLoadingMetrics ? "Loading" : formatSummaryDate(latestUpdatedAt),
+    },
+  ];
 
   const loadMetrics = useCallback(async () => {
     setMetrics(buildInitialMetrics());
@@ -273,6 +360,37 @@ export default function WorkflowDashboardPage() {
             demo starts in the browser with localStorage, then can optionally
             save records to Supabase through the existing API routes.
           </p>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-white">
+                Workflow database summary
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Public metrics from optional Supabase sync records. The demos
+                still use localStorage as the main workspace.
+              </p>
+            </div>
+
+            {failedMetricCount > 0 ? (
+              <span className="w-fit rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                {failedMetricCount} metric source
+                {failedMetricCount === 1 ? "" : "s"} unavailable
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {summaryValues.map((item) => (
+              <SummaryBox
+                key={item.label}
+                label={item.label}
+                value={item.value}
+              />
+            ))}
+          </div>
         </section>
 
         <div className="mt-8 grid gap-6">
