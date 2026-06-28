@@ -341,6 +341,12 @@ export default function Home() {
                 View all demos
               </Link>
               <Link
+                href="/workflow-dashboard"
+                className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+              >
+                View workflow dashboard
+              </Link>
+              <Link
                 href="/case-studies"
                 className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
               >
