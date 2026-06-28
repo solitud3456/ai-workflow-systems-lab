@@ -213,3 +213,13 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Added a homepage link/CTA to `/workflow-dashboard`.
 - Made the workflow dashboard easier for visitors to discover.
 - Kept demo behavior and API behavior unchanged.
+
+## Workflow systems case study added
+
+- Updated `/case-studies` with a real case study for the current workflow lab system.
+- Explained the three manual-AI workflow demos.
+- Explained localStorage workspace plus optional Supabase sync.
+- Mentioned internal API routes instead of direct browser database writes.
+- Linked to the workflow dashboard and all three demos.
+- Avoided claiming the project is a production SaaS.
+- Created checkpoint tag `v12-workflow-systems-case-study`.
