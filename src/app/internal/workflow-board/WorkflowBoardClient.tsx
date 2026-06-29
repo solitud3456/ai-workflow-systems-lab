@@ -25,6 +25,31 @@ const workflows = [
     label: "Document Intake",
     apiEndpoint: "/api/document-records",
   },
+  {
+    key: "support",
+    label: "Support Ticket",
+    apiEndpoint: "/api/support-records",
+  },
+  {
+    key: "invoice",
+    label: "Invoice Follow-up",
+    apiEndpoint: "/api/invoice-records",
+  },
+  {
+    key: "meeting",
+    label: "Meeting Action",
+    apiEndpoint: "/api/meeting-records",
+  },
+  {
+    key: "it",
+    label: "IT Request",
+    apiEndpoint: "/api/it-request-records",
+  },
+  {
+    key: "vendor",
+    label: "Vendor Request",
+    apiEndpoint: "/api/vendor-records",
+  },
 ] as const;
 
 type Workflow = (typeof workflows)[number];
@@ -235,6 +260,26 @@ function getApiEndpointForDemoType(record: DemoRecord) {
 
   if (record.demo_type === "document_intake") {
     return "/api/document-records";
+  }
+
+  if (record.demo_type === "support_ticket") {
+    return "/api/support-records";
+  }
+
+  if (record.demo_type === "invoice_follow_up") {
+    return "/api/invoice-records";
+  }
+
+  if (record.demo_type === "meeting_actions") {
+    return "/api/meeting-records";
+  }
+
+  if (record.demo_type === "it_request") {
+    return "/api/it-request-records";
+  }
+
+  if (record.demo_type === "vendor_request") {
+    return "/api/vendor-records";
   }
 
   return record.apiEndpoint;
@@ -565,7 +610,7 @@ export default function WorkflowBoardClient() {
           <PageHeader
             eyebrow="Internal"
             title="Workflow Board"
-            description="A status-column board for reviewing saved Supabase records across Lead Follow-up, Recruitment Workflow, and Document Intake."
+            description="A status-column board for reviewing saved Supabase records across the workflow demos."
           />
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 lg:min-w-64">
@@ -578,28 +623,10 @@ export default function WorkflowBoardClient() {
               {isLoading ? "Loading..." : "Refresh board"}
             </button>
             <Link
-              href="/internal/review-queue"
+              href="/internal"
               className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
             >
-              Open review queue
-            </Link>
-            <Link
-              href="/internal/demo-records"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open records viewer
-            </Link>
-            <Link
-              href="/internal/activity-log"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open activity log
-            </Link>
-            <Link
-              href="/internal/task-queue"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open task queue
+              Internal tools
             </Link>
             <p className="mt-3 text-xs leading-5 text-slate-400">
               {lastLoadedAt

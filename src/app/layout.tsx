@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 
 const siteDescription =
-  "Manual-AI workflow prototypes for lead follow-up, recruitment screening, and document intake.";
+  "Manual-AI workflow prototypes for common company operations, review, and follow-up tasks.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ai-workflow-systems-lab.vercel.app"),
@@ -19,10 +19,8 @@ export const metadata: Metadata = {
 
 const navItems = [
   { href: "/", label: "Home" },
+  { href: "/workflow-dashboard", label: "Dashboard" },
   { href: "/demos", label: "Demos" },
-  { href: "/case-studies", label: "Case Studies" },
-  { href: "/methods", label: "Methods" },
-  { href: "/about", label: "About" },
 ];
 
 export default function RootLayout({
@@ -72,22 +70,22 @@ export default function RootLayout({
                 className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-slate-400"
               >
                 <Link
+                  href="/workflow-dashboard"
+                  className="transition hover:text-cyan-300"
+                >
+                  Dashboard
+                </Link>
+                <Link
                   href="/demos"
                   className="transition hover:text-cyan-300"
                 >
                   Demos
                 </Link>
                 <Link
-                  href="/case-studies"
+                  href="/about"
                   className="transition hover:text-cyan-300"
                 >
-                  Case Studies
-                </Link>
-                <Link
-                  href="/methods"
-                  className="transition hover:text-cyan-300"
-                >
-                  Methods
+                  About
                 </Link>
                 <a
                   href="https://github.com/solitud3456/ai-workflow-systems-lab"

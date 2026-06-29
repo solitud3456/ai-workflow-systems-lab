@@ -20,6 +20,31 @@ const recordSections = [
     title: "Document Intake records",
     endpoint: "/api/document-records",
   },
+  {
+    key: "support",
+    title: "Support Ticket records",
+    endpoint: "/api/support-records",
+  },
+  {
+    key: "invoice",
+    title: "Invoice Follow-up records",
+    endpoint: "/api/invoice-records",
+  },
+  {
+    key: "meeting",
+    title: "Meeting Action records",
+    endpoint: "/api/meeting-records",
+  },
+  {
+    key: "it",
+    title: "IT Request records",
+    endpoint: "/api/it-request-records",
+  },
+  {
+    key: "vendor",
+    title: "Vendor Request records",
+    endpoint: "/api/vendor-records",
+  },
 ] as const;
 
 const csvColumns = [
@@ -71,7 +96,16 @@ function buildEmptyRecords(): RecordsBySection {
     lead: [],
     recruitment: [],
     document: [],
+    support: [],
+    invoice: [],
+    meeting: [],
+    it: [],
+    vendor: [],
   };
+}
+
+function getSectionExportLabel(section: RecordSection, format: "JSON" | "CSV") {
+  return `Export ${section.title} as ${format}`;
 }
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -621,18 +655,10 @@ export default function DemoRecordsClient() {
       label: "Total records",
       value: isLoading ? "Loading" : allRecords.length,
     },
-    {
-      label: "Lead records",
-      value: isLoading ? "Loading" : recordsBySection.lead.length,
-    },
-    {
-      label: "Recruitment records",
-      value: isLoading ? "Loading" : recordsBySection.recruitment.length,
-    },
-    {
-      label: "Document records",
-      value: isLoading ? "Loading" : recordsBySection.document.length,
-    },
+    ...recordSections.map((section) => ({
+      label: section.title,
+      value: isLoading ? "Loading" : recordsBySection[section.key].length,
+    })),
     {
       label: "Approved analyses",
       value: isLoading ? "Loading" : approvedAnalysisCount,
@@ -858,28 +884,10 @@ export default function DemoRecordsClient() {
               {isLoading ? "Loading..." : "Refresh records"}
             </button>
             <Link
-              href="/internal/review-queue"
+              href="/internal"
               className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
             >
-              Open review queue
-            </Link>
-            <Link
-              href="/internal/workflow-board"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open workflow board
-            </Link>
-            <Link
-              href="/internal/activity-log"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open activity log
-            </Link>
-            <Link
-              href="/internal/task-queue"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open task queue
+              Internal tools
             </Link>
             <p className="mt-3 text-xs leading-5 text-slate-400">
               {lastLoadedAt
@@ -965,11 +973,7 @@ export default function DemoRecordsClient() {
                         disabled={isLoading || records.length === 0}
                         className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {section.key === "lead"
-                          ? "Export Lead records as JSON"
-                          : section.key === "recruitment"
-                            ? "Export Recruitment records as JSON"
-                            : "Export Document Intake records as JSON"}
+                        {getSectionExportLabel(section, "JSON")}
                       </button>
                     );
                   })}
@@ -1002,11 +1006,7 @@ export default function DemoRecordsClient() {
                         disabled={isLoading || records.length === 0}
                         className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {section.key === "lead"
-                          ? "Export Lead records as CSV"
-                          : section.key === "recruitment"
-                            ? "Export Recruitment records as CSV"
-                            : "Export Document Intake records as CSV"}
+                        {getSectionExportLabel(section, "CSV")}
                       </button>
                     );
                   })}

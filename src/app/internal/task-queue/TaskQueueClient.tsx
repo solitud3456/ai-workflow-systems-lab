@@ -22,6 +22,31 @@ const workflowOptions = [
     label: "Document Intake",
     demoType: "document_intake",
   },
+  {
+    key: "support",
+    label: "Support Ticket",
+    demoType: "support_ticket",
+  },
+  {
+    key: "invoice",
+    label: "Invoice Follow-up",
+    demoType: "invoice_follow_up",
+  },
+  {
+    key: "meeting",
+    label: "Meeting Action",
+    demoType: "meeting_actions",
+  },
+  {
+    key: "it",
+    label: "IT Request",
+    demoType: "it_request",
+  },
+  {
+    key: "vendor",
+    label: "Vendor Request",
+    demoType: "vendor_request",
+  },
 ] as const;
 
 type WorkflowFilter = "all" | (typeof workflowOptions)[number]["key"];
@@ -73,14 +98,6 @@ type ActionMessage = {
   text: string;
   showActivityLogLink?: boolean;
 } | null;
-
-type DailyTaskGenerationResult = {
-  processedRecords: number;
-  tasksCreated: number;
-  skippedNoAnalysis: number;
-  skippedNoActionFields: number;
-  duplicatesSkipped: number;
-};
 
 type WorkflowAutomationRunResult = {
   recordsScanned: number;
@@ -289,46 +306,6 @@ async function deleteTask(id: string) {
   }
 }
 
-async function runDailyTaskGeneration() {
-  const response = await fetch("/api/automation/run-daily-task-generation", {
-    method: "POST",
-  });
-  let body: unknown;
-
-  try {
-    body = await response.json();
-  } catch {
-    throw new Error("The API response was not valid JSON.");
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      getApiError(body, "The daily task generation request failed."),
-    );
-  }
-
-  if (!isObjectRecord(body) || body.ok !== true) {
-    throw new Error("The API response did not confirm daily task generation.");
-  }
-
-  return {
-    processedRecords:
-      typeof body.processedRecords === "number" ? body.processedRecords : 0,
-    tasksCreated:
-      typeof body.tasksCreated === "number" ? body.tasksCreated : 0,
-    skippedNoAnalysis:
-      typeof body.skippedNoAnalysis === "number" ? body.skippedNoAnalysis : 0,
-    skippedNoActionFields:
-      typeof body.skippedNoActionFields === "number"
-        ? body.skippedNoActionFields
-        : 0,
-    duplicatesSkipped:
-      typeof body.duplicatesSkipped === "number"
-        ? body.duplicatesSkipped
-        : 0,
-  } satisfies DailyTaskGenerationResult;
-}
-
 async function runWorkflowAutomation() {
   const response = await fetch("/api/automation/run-workflow-automation", {
     method: "POST",
@@ -365,24 +342,12 @@ async function runWorkflowAutomation() {
   } satisfies WorkflowAutomationRunResult;
 }
 
-function getDailyTaskGenerationMessage(result: DailyTaskGenerationResult) {
-  return `Daily task generation complete: ${result.processedRecords} approved record${
-    result.processedRecords === 1 ? "" : "s"
-  } processed, ${result.tasksCreated} task${
-    result.tasksCreated === 1 ? "" : "s"
-  } created, ${result.skippedNoAnalysis} skipped with no analysis, ${
-    result.skippedNoActionFields
-  } skipped with no action fields, ${result.duplicatesSkipped} duplicate task${
-    result.duplicatesSkipped === 1 ? "" : "s"
-  } skipped.`;
-}
-
 function getWorkflowAutomationMessage(result: WorkflowAutomationRunResult) {
-  return `Workflow automation complete: ${result.recordsScanned} record${
+  return `Automation complete: ${result.recordsScanned} record${
     result.recordsScanned === 1 ? "" : "s"
-  } scanned, ${result.statusesUpdated} status update${
+  } scanned, ${result.statusesUpdated} record${
     result.statusesUpdated === 1 ? "" : "s"
-  }, ${result.tasksCreated} task${
+  } updated, ${result.tasksCreated} task${
     result.tasksCreated === 1 ? "" : "s"
   } created, ${result.duplicatesSkipped} duplicate task${
     result.duplicatesSkipped === 1 ? "" : "s"
@@ -616,8 +581,6 @@ export default function TaskQueueClient() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditFormState | null>(null);
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
-  const [isRunningDailyGeneration, setIsRunningDailyGeneration] =
-    useState(false);
   const [isRunningWorkflowAutomation, setIsRunningWorkflowAutomation] =
     useState(false);
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
@@ -718,31 +681,8 @@ export default function TaskQueueClient() {
     }
   }, [createForm, loadTasks]);
 
-  const handleRunDailyTaskGeneration = useCallback(async () => {
-    setIsRunningDailyGeneration(true);
-    setActionMessage(null);
-
-    try {
-      const result = await runDailyTaskGeneration();
-
-      setActionMessage({
-        kind: "success",
-        text: getDailyTaskGenerationMessage(result),
-        showActivityLogLink: true,
-      });
-      await loadTasks();
-    } catch (error) {
-      setActionMessage({
-        kind: "error",
-        text: getErrorMessage(error),
-      });
-    } finally {
-      setIsRunningDailyGeneration(false);
-    }
-  }, [loadTasks]);
-
   const handleRunWorkflowAutomation = useCallback(async () => {
-    const confirmed = window.confirm("Run workflow automation now?");
+    const confirmed = window.confirm("Run automation now?");
 
     if (!confirmed) {
       return;
@@ -847,9 +787,7 @@ export default function TaskQueueClient() {
 
   const handleDeleteTask = useCallback(
     async (task: DemoTask) => {
-      const confirmed = window.confirm(
-        `Delete "${task.title}" from the task queue?`,
-      );
+      const confirmed = window.confirm(`Delete "${task.title}"?`);
 
       if (!confirmed) {
         return;
@@ -891,8 +829,8 @@ export default function TaskQueueClient() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <PageHeader
             eyebrow="Internal"
-            title="Task Queue"
-            description="Internal workflow tasks created manually or generated from saved demo record analysis."
+            title="Command Center"
+            description="Run automation, manage tasks, and create manual follow-up work."
           />
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 lg:min-w-64">
@@ -905,28 +843,10 @@ export default function TaskQueueClient() {
               {isLoading ? "Loading..." : "Refresh tasks"}
             </button>
             <Link
-              href="/internal/demo-records"
+              href="/internal"
               className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
             >
-              Open records viewer
-            </Link>
-            <Link
-              href="/internal/review-queue"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open review queue
-            </Link>
-            <Link
-              href="/internal/workflow-board"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open workflow board
-            </Link>
-            <Link
-              href="/internal/activity-log"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open activity log
+              Internal tools
             </Link>
             <p className="mt-3 text-xs leading-5 text-slate-400">
               {lastLoadedAt
@@ -967,7 +887,7 @@ export default function TaskQueueClient() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-base font-semibold text-white">
-                Automation runners
+                Automation
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-300">
                 Run internal automation using saved analysis JSON only.
@@ -976,23 +896,11 @@ export default function TaskQueueClient() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => void handleRunDailyTaskGeneration()}
-                disabled={isRunningDailyGeneration || isRunningWorkflowAutomation}
-                className="w-fit rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isRunningDailyGeneration
-                  ? "Running..."
-                  : "Run daily task generation"}
-              </button>
-              <button
-                type="button"
                 onClick={() => void handleRunWorkflowAutomation()}
-                disabled={isRunningWorkflowAutomation || isRunningDailyGeneration}
-                className="w-fit rounded-lg border border-emerald-400/50 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:border-emerald-300 hover:text-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isRunningWorkflowAutomation}
+                className="w-fit rounded-lg border border-cyan-400/60 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isRunningWorkflowAutomation
-                  ? "Running..."
-                  : "Run workflow automation"}
+                {isRunningWorkflowAutomation ? "Running..." : "Run automation"}
               </button>
             </div>
           </div>

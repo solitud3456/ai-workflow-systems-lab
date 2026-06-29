@@ -1,8 +1,21 @@
 export const WORKFLOW_STATUS_PRESETS = [
   "New",
   "Needs review",
+  "Due soon",
+  "Overdue",
   "Approved",
+  "Actions created",
+  "Needs approval",
+  "In progress",
+  "Blocked",
   "Follow-up",
+  "Escalated",
+  "Resolved",
+  "Waiting info",
+  "Under review",
+  "Paid",
+  "Done",
+  "Rejected",
   "Closed",
 ] as const;
 

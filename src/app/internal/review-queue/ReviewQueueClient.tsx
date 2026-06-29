@@ -21,6 +21,31 @@ const workflows = [
     label: "Document Intake",
     apiEndpoint: "/api/document-records",
   },
+  {
+    key: "support",
+    label: "Support Ticket",
+    apiEndpoint: "/api/support-records",
+  },
+  {
+    key: "invoice",
+    label: "Invoice Follow-up",
+    apiEndpoint: "/api/invoice-records",
+  },
+  {
+    key: "meeting",
+    label: "Meeting Action",
+    apiEndpoint: "/api/meeting-records",
+  },
+  {
+    key: "it",
+    label: "IT Request",
+    apiEndpoint: "/api/it-request-records",
+  },
+  {
+    key: "vendor",
+    label: "Vendor Request",
+    apiEndpoint: "/api/vendor-records",
+  },
 ] as const;
 
 type Workflow = (typeof workflows)[number];
@@ -299,6 +324,26 @@ function getApiEndpointForDemoType(record: DemoRecord) {
 
   if (record.demo_type === "document_intake") {
     return "/api/document-records";
+  }
+
+  if (record.demo_type === "support_ticket") {
+    return "/api/support-records";
+  }
+
+  if (record.demo_type === "invoice_follow_up") {
+    return "/api/invoice-records";
+  }
+
+  if (record.demo_type === "meeting_actions") {
+    return "/api/meeting-records";
+  }
+
+  if (record.demo_type === "it_request") {
+    return "/api/it-request-records";
+  }
+
+  if (record.demo_type === "vendor_request") {
+    return "/api/vendor-records";
   }
 
   return record.apiEndpoint;
@@ -1048,7 +1093,7 @@ export default function ReviewQueueClient() {
           <PageHeader
             eyebrow="Internal"
             title="Review Queue"
-            description="A cross-workflow review surface for saved Supabase records from Lead Follow-up, Recruitment Workflow, and Document Intake. It is for internal cleanup and review only."
+            description="A cross-workflow review surface for saved Supabase records from the workflow demos. It is for internal cleanup and review only."
           />
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 lg:min-w-60">
@@ -1061,28 +1106,10 @@ export default function ReviewQueueClient() {
               {isLoading ? "Loading..." : "Refresh queue"}
             </button>
             <Link
-              href="/internal/demo-records"
+              href="/internal"
               className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
             >
-              Open records viewer
-            </Link>
-            <Link
-              href="/internal/workflow-board"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open workflow board
-            </Link>
-            <Link
-              href="/internal/activity-log"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open activity log
-            </Link>
-            <Link
-              href="/internal/task-queue"
-              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Open task queue
+              Internal tools
             </Link>
             <p className="mt-3 text-xs leading-5 text-slate-400">
               {lastLoadedAt
@@ -1129,7 +1156,7 @@ export default function ReviewQueueClient() {
                 Queue filters
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Search and filter the records currently loaded from the three
+                Search and filter the records currently loaded from the
                 Supabase sync APIs.
               </p>
             </div>
@@ -1310,7 +1337,7 @@ export default function ReviewQueueClient() {
 
           <div className="mt-5 flex flex-col gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm leading-6 text-slate-300">
-              Generate task queue items from all approved records using saved
+              Generate task items from all approved records using saved
               analysis JSON. This skips records without usable action fields
               and avoids duplicate task titles for the same source record.
             </p>
@@ -1341,7 +1368,7 @@ export default function ReviewQueueClient() {
                 href="/internal/task-queue"
                 className="mt-3 inline-flex rounded-lg border border-emerald-400/50 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-300 hover:text-white"
               >
-                Open task queue
+                Open Command Center
               </Link>
             ) : null}
           </div>
@@ -1371,7 +1398,7 @@ export default function ReviewQueueClient() {
                 Review queue
               </h2>
               <p className="mt-1 text-sm text-slate-400">
-                Compact review cards across all three workflows.
+                Compact review cards across all workflows.
               </p>
             </div>
 

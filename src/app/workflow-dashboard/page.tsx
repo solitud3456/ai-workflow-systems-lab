@@ -9,31 +9,65 @@ const workflows = [
     key: "lead",
     name: "Lead Follow-up Assistant",
     description:
-      "Turns messy customer inquiries into structured lead records, manual AI analysis, human-reviewed next steps, and reusable reply drafts.",
+      "Customer inquiries, follow-up status, AI analysis, and reply drafts.",
     demoHref: "/demos/lead-follow-up",
     apiEndpoint: "/api/lead-records",
-    humanReview:
-      "Human review happens before using the suggested follow-up reply.",
   },
   {
     key: "recruitment",
     name: "Recruitment Workflow Assistant",
     description:
-      "Organizes candidate notes into screening summaries, interview questions, and recruiter next steps without treating AI as the hiring decision.",
+      "Candidate notes, screening summaries, interview questions, and next steps.",
     demoHref: "/demos/recruitment-assistant",
     apiEndpoint: "/api/recruitment-records",
-    humanReview:
-      "Human review happens before using screening notes or interview questions.",
   },
   {
     key: "document",
     name: "Document Intake Assistant",
     description:
-      "Turns pasted document text into summaries, key points, missing information, action items, and review-ready next steps.",
+      "Document text, summaries, missing information, action items, and review status.",
     demoHref: "/demos/document-intake",
     apiEndpoint: "/api/document-records",
-    humanReview:
-      "Human review happens before acting on extracted document details.",
+  },
+  {
+    key: "support",
+    name: "Support Ticket Assistant",
+    description:
+      "Customer support messages, triage summaries, escalation signals, and reply drafts.",
+    demoHref: "/demos/support-ticket",
+    apiEndpoint: "/api/support-records",
+  },
+  {
+    key: "invoice",
+    name: "Invoice Follow-up Assistant",
+    description:
+      "Invoice context, payment risk, follow-up reminders, and escalation signals.",
+    demoHref: "/demos/invoice-follow-up",
+    apiEndpoint: "/api/invoice-records",
+  },
+  {
+    key: "meeting",
+    name: "Meeting Action Assistant",
+    description:
+      "Meeting notes, decisions, action items, owners, deadlines, and review status.",
+    demoHref: "/demos/meeting-actions",
+    apiEndpoint: "/api/meeting-records",
+  },
+  {
+    key: "it",
+    name: "IT Request Assistant",
+    description:
+      "Internal IT requests, approval checks, security risk, and task checklists.",
+    demoHref: "/demos/it-request",
+    apiEndpoint: "/api/it-request-records",
+  },
+  {
+    key: "vendor",
+    name: "Vendor Request Assistant",
+    description:
+      "Vendor messages, missing information, risk level, decisions, and reply drafts.",
+    demoHref: "/demos/vendor-request",
+    apiEndpoint: "/api/vendor-records",
   },
 ] as const;
 
@@ -68,6 +102,11 @@ function buildInitialMetrics(): MetricsByWorkflow {
     lead: loadingMetric,
     recruitment: loadingMetric,
     document: loadingMetric,
+    support: loadingMetric,
+    invoice: loadingMetric,
+    meeting: loadingMetric,
+    it: loadingMetric,
+    vendor: loadingMetric,
   };
 }
 
@@ -269,6 +308,26 @@ export default function WorkflowDashboardPage() {
       value: isLoadingMetrics ? "Loading" : metrics.document.recordCount,
     },
     {
+      label: "Support records",
+      value: isLoadingMetrics ? "Loading" : metrics.support.recordCount,
+    },
+    {
+      label: "Invoice records",
+      value: isLoadingMetrics ? "Loading" : metrics.invoice.recordCount,
+    },
+    {
+      label: "Meeting records",
+      value: isLoadingMetrics ? "Loading" : metrics.meeting.recordCount,
+    },
+    {
+      label: "IT request records",
+      value: isLoadingMetrics ? "Loading" : metrics.it.recordCount,
+    },
+    {
+      label: "Vendor records",
+      value: isLoadingMetrics ? "Loading" : metrics.vendor.recordCount,
+    },
+    {
       label: "Approved analyses",
       value: isLoadingMetrics ? "Loading" : totalApprovedAnalyses,
     },
@@ -331,8 +390,8 @@ export default function WorkflowDashboardPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <PageHeader
             eyebrow="Workflow dashboard"
-            title="Three workflow systems in one view."
-            description="A public portfolio dashboard for comparing the current manual-AI prototypes: lead follow-up, recruitment screening, and document intake. The demos still use localStorage as the main workspace, with optional Supabase sync for persistence experiments."
+            title="Workflow systems dashboard"
+            description="A compact overview of the workflow demos and their optional Supabase sync metrics."
           />
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 lg:min-w-56">
@@ -346,32 +405,17 @@ export default function WorkflowDashboardPage() {
             <p className="mt-3 text-xs leading-5 text-slate-400">
               {lastLoadedAt
                 ? `Last refreshed: ${lastLoadedAt}`
-                : "Metrics load from optional Supabase sync APIs."}
+                : "Metrics load automatically."}
             </p>
           </div>
         </div>
-
-        <section className="mt-8 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
-          <h2 className="text-base font-semibold text-white">
-            Honest prototype status
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
-            These are manual-AI workflow prototypes, not production SaaS. Each
-            demo starts in the browser with localStorage, then can optionally
-            save records to Supabase through the existing API routes.
-          </p>
-        </section>
 
         <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-base font-semibold text-white">
-                Workflow database summary
+                Summary
               </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
-                Public metrics from optional Supabase sync records. The demos
-                still use localStorage as the main workspace.
-              </p>
             </div>
 
             {failedMetricCount > 0 ? (
@@ -428,33 +472,6 @@ export default function WorkflowDashboardPage() {
                     <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
                       {workflow.description}
                     </p>
-
-                    <dl className="mt-5 grid gap-4 text-sm md:grid-cols-3">
-                      <div>
-                        <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                          Storage model
-                        </dt>
-                        <dd className="mt-1 leading-6 text-slate-300">
-                          localStorage workspace + optional Supabase sync
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                          Human review
-                        </dt>
-                        <dd className="mt-1 leading-6 text-slate-300">
-                          {workflow.humanReview}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                          Database sync
-                        </dt>
-                        <dd className="mt-1 leading-6 text-slate-300">
-                          Optional, through existing server API route
-                        </dd>
-                      </div>
-                    </dl>
                   </div>
 
                   <Link

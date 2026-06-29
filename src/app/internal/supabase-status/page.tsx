@@ -95,6 +95,13 @@ export default async function SupabaseStatusPage() {
           description="A small development verification page for checking whether the optional Supabase foundation is configured. It does not change demo data or write to the database."
         />
 
+        <Link
+          href="/internal"
+          className="mt-8 inline-flex rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
+        >
+          Internal tools
+        </Link>
+
         <section className="mt-10 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
           <h2 className="text-xl font-semibold text-white">
             Environment checks

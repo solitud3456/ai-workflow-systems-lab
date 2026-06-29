@@ -20,6 +20,11 @@ const demoTypes = [
   "lead_follow_up",
   "recruitment_assistant",
   "document_intake",
+  "support_ticket",
+  "invoice_follow_up",
+  "meeting_actions",
+  "it_request",
+  "vendor_request",
 ] as const;
 
 type WorkflowAutomationResult = {
@@ -120,6 +125,83 @@ function getTriageStatus(
 
     if (nextAction && currentStatus === "New") {
       return "Needs review";
+    }
+  }
+
+  if (record.demo_type === "support_ticket") {
+    const urgency = getString(analysis.urgency)?.toLowerCase();
+    const nextAction = getString(analysis.nextAction);
+
+    if (analysis.escalationNeeded === true) {
+      return "Escalated";
+    }
+
+    if (urgency === "high") {
+      return "Follow-up";
+    }
+
+    if (nextAction && currentStatus === "New") {
+      return "Needs review";
+    }
+  }
+
+  if (record.demo_type === "invoice_follow_up") {
+    const urgency = getString(analysis.urgency)?.toLowerCase();
+    const paymentRisk = getString(analysis.paymentRisk)?.toLowerCase();
+
+    if (currentStatus === "Paid" || currentStatus === "Closed") {
+      return null;
+    }
+
+    if (
+      paymentRisk === "high" ||
+      urgency === "high" ||
+      analysis.escalationNeeded === true
+    ) {
+      return "Follow-up";
+    }
+  }
+
+  if (record.demo_type === "meeting_actions") {
+    if (Array.isArray(analysis.actionItems) && analysis.actionItems.length > 0) {
+      return "Actions created";
+    }
+
+    if (hasStringItems(analysis.missingInformation) && currentStatus === "New") {
+      return "Needs review";
+    }
+  }
+
+  if (record.demo_type === "it_request") {
+    const securityRisk = getString(analysis.securityRisk)?.toLowerCase();
+    const nextAction = getString(analysis.nextAction);
+
+    if (analysis.approvalNeeded === true) {
+      return "Needs approval";
+    }
+
+    if (securityRisk === "high") {
+      return "In progress";
+    }
+
+    if (nextAction && currentStatus === "New") {
+      return "In progress";
+    }
+  }
+
+  if (record.demo_type === "vendor_request") {
+    const riskLevel = getString(analysis.riskLevel)?.toLowerCase();
+
+    if (hasStringItems(analysis.missingInformation)) {
+      return "Waiting info";
+    }
+
+    if (analysis.decisionNeeded === true) {
+      return "Under review";
+    }
+
+    if (riskLevel === "high" && currentStatus === "New") {
+      return "Under review";
     }
   }
 

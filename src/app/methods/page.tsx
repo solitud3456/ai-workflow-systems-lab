@@ -1,52 +1,12 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 
-const methods = [
-  {
-    title: "Workflow-first design",
-    description:
-      "Start with a messy real-world business process, then break it into intake, status tracking, AI assistance, human review, and follow-up action.",
-  },
-  {
-    title: "Manual AI mode first",
-    description:
-      "Avoid paid API integration at the start. Generate structured prompts, ask for strict JSON output, and paste the result back into the app so the workflow can be tested before backend complexity.",
-  },
-  {
-    title: "Human-in-the-loop review",
-    description:
-      "Treat AI suggestions as drafts, not final truth. All three live demos track whether saved analysis has been human-reviewed before a reply, interview question, action item, or next step is used.",
-  },
-  {
-    title: "Small persistent prototypes",
-    description:
-      "Use localStorage first to prove the workflow with saved records, analysis state, and dashboard metrics before adding Supabase, database storage, or authentication.",
-  },
-  {
-    title: "Portfolio proof",
-    description:
-      "Every demo should explain the problem, workflow, current limitation, and next upgrades. The project is presented as an applied AI workflow systems lab, not a fake agency.",
-  },
-];
-
-const sharedPattern = [
-  "Messy intake",
-  "Status tracking",
-  "Manual AI prompt generation",
-  "Strict JSON output",
-  "Pasted AI analysis",
-  "Human review",
-  "Copyable next-step output",
-  "Dashboard metrics",
-  "localStorage persistence",
-  "Demo management controls",
-];
-
-const whyItMatters = [
-  "AI output is treated as a draft for human verification, not final truth.",
-  "The app turns AI output into structured workflow data that can be saved, reviewed, measured, and reused.",
-  "Each prototype can be tested before adding database, authentication, or API complexity.",
-  "The same pattern can support sales, HR, documents, customer support, operations, and internal admin work.",
+const methodSteps = [
+  "Start with messy intake.",
+  "Track status and notes.",
+  "Use structured manual AI output.",
+  "Require human review.",
+  "Turn reviewed output into tasks or next steps.",
 ];
 
 export default function MethodsPage() {
@@ -55,98 +15,46 @@ export default function MethodsPage() {
       <section className="mx-auto max-w-5xl">
         <PageHeader
           eyebrow="Methods"
-          title="The system matters more than the prompt."
-          description="This lab builds AI-assisted workflows in small, testable steps: structured records, manual AI outputs, human review, saved state, and honest limitations."
+          title="A compact workflow method"
+          description="The demos use one simple pattern: intake, structure, review, and action."
         />
 
-        <section className="mt-10 rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-6">
-          <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-            Current build method
-          </span>
-          <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">
-            The method is now proven across three workflows. Lead Follow-up
-            Assistant applies it to customer inquiries, Recruitment Workflow
-            Assistant applies it to candidate screening, and Document Intake
-            Assistant applies it to document extraction and review. All three
-            use manual AI mode, save structured results locally, and keep a
-            human review step before action.
-          </p>
+        <ol className="mt-10 grid gap-4 md:grid-cols-5">
+          {methodSteps.map((step, index) => (
+            <li
+              key={step}
+              className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5"
+            >
+              <p className="text-xs font-semibold text-cyan-300">
+                {String(index + 1).padStart(2, "0")}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{step}</p>
+            </li>
+          ))}
+        </ol>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <section className="mt-8 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-6">
+          <h2 className="text-xl font-semibold text-white">Current stance</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            The project keeps AI assistance visible and reviewable. API-driven
+            automation can come later; the current value is proving the
+            workflow first.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              href="/demos/lead-follow-up"
-              className="rounded-full bg-cyan-400 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+              href="/workflow-dashboard"
+              className="rounded-full bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
             >
-              Open lead demo
+              View dashboard
             </Link>
             <Link
-              href="/demos/recruitment-assistant"
-              className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
+              href="/demos"
+              className="rounded-full border border-cyan-400/50 px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
             >
-              Open recruitment demo
-            </Link>
-            <Link
-              href="/demos/document-intake"
-              className="rounded-full border border-cyan-400/60 px-5 py-3 text-center text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:bg-cyan-500/10"
-            >
-              Open document demo
-            </Link>
-            <Link
-              href="/case-studies"
-              className="rounded-full border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
-            >
-              Read case studies
+              View demos
             </Link>
           </div>
         </section>
-
-        <div className="mt-8 grid gap-5 lg:grid-cols-2">
-          <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-            <h2 className="text-xl font-semibold text-white">
-              Shared workflow pattern
-            </h2>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {sharedPattern.map((step) => (
-                <span
-                  key={step}
-                  className="rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-300"
-                >
-                  {step}
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-            <h2 className="text-xl font-semibold text-white">Why it matters</h2>
-            <ul className="mt-4 space-y-3">
-              {whyItMatters.map((point) => (
-                <li key={point} className="text-sm leading-6 text-slate-400">
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </section>
-        </div>
-
-        <div className="mt-8 grid gap-5">
-          {methods.map((method, index) => (
-            <article
-              key={method.title}
-              className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
-                Method {index + 1}
-              </p>
-              <h2 className="mt-3 text-xl font-semibold text-white">
-                {method.title}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                {method.description}
-              </p>
-            </article>
-          ))}
-        </div>
       </section>
     </main>
   );
