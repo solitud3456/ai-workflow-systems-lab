@@ -82,6 +82,13 @@ type DailyTaskGenerationResult = {
   duplicatesSkipped: number;
 };
 
+type WorkflowAutomationRunResult = {
+  recordsScanned: number;
+  statusesUpdated: number;
+  tasksCreated: number;
+  duplicatesSkipped: number;
+};
+
 const emptyTaskForm: TaskFormState = {
   title: "",
   demo_type: "lead_follow_up",
@@ -322,6 +329,42 @@ async function runDailyTaskGeneration() {
   } satisfies DailyTaskGenerationResult;
 }
 
+async function runWorkflowAutomation() {
+  const response = await fetch("/api/automation/run-workflow-automation", {
+    method: "POST",
+  });
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The API response was not valid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      getApiError(body, "The workflow automation request failed."),
+    );
+  }
+
+  if (!isObjectRecord(body) || body.ok !== true) {
+    throw new Error("The API response did not confirm workflow automation.");
+  }
+
+  return {
+    recordsScanned:
+      typeof body.recordsScanned === "number" ? body.recordsScanned : 0,
+    statusesUpdated:
+      typeof body.statusesUpdated === "number" ? body.statusesUpdated : 0,
+    tasksCreated:
+      typeof body.tasksCreated === "number" ? body.tasksCreated : 0,
+    duplicatesSkipped:
+      typeof body.duplicatesSkipped === "number"
+        ? body.duplicatesSkipped
+        : 0,
+  } satisfies WorkflowAutomationRunResult;
+}
+
 function getDailyTaskGenerationMessage(result: DailyTaskGenerationResult) {
   return `Daily task generation complete: ${result.processedRecords} approved record${
     result.processedRecords === 1 ? "" : "s"
@@ -330,6 +373,18 @@ function getDailyTaskGenerationMessage(result: DailyTaskGenerationResult) {
   } created, ${result.skippedNoAnalysis} skipped with no analysis, ${
     result.skippedNoActionFields
   } skipped with no action fields, ${result.duplicatesSkipped} duplicate task${
+    result.duplicatesSkipped === 1 ? "" : "s"
+  } skipped.`;
+}
+
+function getWorkflowAutomationMessage(result: WorkflowAutomationRunResult) {
+  return `Workflow automation complete: ${result.recordsScanned} record${
+    result.recordsScanned === 1 ? "" : "s"
+  } scanned, ${result.statusesUpdated} status update${
+    result.statusesUpdated === 1 ? "" : "s"
+  }, ${result.tasksCreated} task${
+    result.tasksCreated === 1 ? "" : "s"
+  } created, ${result.duplicatesSkipped} duplicate task${
     result.duplicatesSkipped === 1 ? "" : "s"
   } skipped.`;
 }
@@ -563,6 +618,8 @@ export default function TaskQueueClient() {
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
   const [isRunningDailyGeneration, setIsRunningDailyGeneration] =
     useState(false);
+  const [isRunningWorkflowAutomation, setIsRunningWorkflowAutomation] =
+    useState(false);
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
   const [priorityFilter, setPriorityFilter] =
     useState<TaskPriorityFilter>("all");
@@ -681,6 +738,35 @@ export default function TaskQueueClient() {
       });
     } finally {
       setIsRunningDailyGeneration(false);
+    }
+  }, [loadTasks]);
+
+  const handleRunWorkflowAutomation = useCallback(async () => {
+    const confirmed = window.confirm("Run workflow automation now?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsRunningWorkflowAutomation(true);
+    setActionMessage(null);
+
+    try {
+      const result = await runWorkflowAutomation();
+
+      setActionMessage({
+        kind: "success",
+        text: getWorkflowAutomationMessage(result),
+        showActivityLogLink: true,
+      });
+      await loadTasks();
+    } catch (error) {
+      setActionMessage({
+        kind: "error",
+        text: getErrorMessage(error),
+      });
+    } finally {
+      setIsRunningWorkflowAutomation(false);
     }
   }, [loadTasks]);
 
@@ -881,24 +967,34 @@ export default function TaskQueueClient() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-base font-semibold text-white">
-                Daily task generation
+                Automation runners
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Run the automation-ready approved-record task generation now.
-                It uses saved analysis JSON only and skips duplicate task
-                titles for the same source record.
+                Run internal automation using saved analysis JSON only.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => void handleRunDailyTaskGeneration()}
-              disabled={isRunningDailyGeneration}
-              className="w-fit rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isRunningDailyGeneration
-                ? "Running..."
-                : "Run daily task generation"}
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void handleRunDailyTaskGeneration()}
+                disabled={isRunningDailyGeneration || isRunningWorkflowAutomation}
+                className="w-fit rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRunningDailyGeneration
+                  ? "Running..."
+                  : "Run daily task generation"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRunWorkflowAutomation()}
+                disabled={isRunningWorkflowAutomation || isRunningDailyGeneration}
+                className="w-fit rounded-lg border border-emerald-400/50 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:border-emerald-300 hover:text-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRunningWorkflowAutomation
+                  ? "Running..."
+                  : "Run workflow automation"}
+              </button>
+            </div>
           </div>
         </section>
 

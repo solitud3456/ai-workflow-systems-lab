@@ -94,7 +94,8 @@ function getActionBadgeClass(action: string) {
   if (
     action === "task_created" ||
     action === "bulk_tasks_generated" ||
-    action === "automation_run"
+    action === "automation_run" ||
+    action === "workflow_automation_run"
   ) {
     return "rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200";
   }

@@ -10,7 +10,8 @@ type TaskActivityAction =
   | "task_completed"
   | "task_deleted"
   | "bulk_tasks_generated"
-  | "automation_run";
+  | "automation_run"
+  | "workflow_automation_run";
 
 type TaskEventRecord = {
   id: string | null;
@@ -120,7 +121,7 @@ export async function createAutomationActivityEvent({
 }: {
   action?: Extract<
     TaskActivityAction,
-    "bulk_tasks_generated" | "automation_run"
+    "bulk_tasks_generated" | "automation_run" | "workflow_automation_run"
   >;
   title: string;
   details: Record<string, unknown>;
