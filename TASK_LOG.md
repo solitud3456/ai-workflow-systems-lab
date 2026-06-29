@@ -287,3 +287,15 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Document Intake records can create multiple tasks from `actionItems`.
 - Improved task automation feedback for no-analysis, no-action-fields, and duplicate-task cases.
 - Created checkpoint tag `v22-task-automation-feedback`.
+
+## Bulk task generation for approved records added
+
+- Added `/api/automation/create-tasks-for-approved-records`.
+- Added bulk task generation from all approved workflow records.
+- Reused existing saved analysis JSON instead of calling external AI APIs.
+- Skips records with no analysis.
+- Skips records with no usable action fields.
+- Skips duplicate task titles for the same source record.
+- Added Review Queue button to generate tasks for approved records.
+- Confirmed generated tasks appear in `/internal/task-queue`.
+- Created checkpoint tag `v23-bulk-approved-task-generation`.
