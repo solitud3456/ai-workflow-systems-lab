@@ -1,5 +1,8 @@
 import {
   areInternalToolsEnabled,
+  buildDeletedRecordEventDetails,
+  buildUpdatedRecordEventDetails,
+  createDemoRecordEvent,
   deleteDemoRecord,
   getConfigErrorStatus,
   getErrorMessage,
@@ -55,10 +58,20 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { error } = await deleteDemoRecord(RECRUITMENT_DEMO_TYPE, id);
+    const { data, error } = await deleteDemoRecord(RECRUITMENT_DEMO_TYPE, id);
 
     if (error) {
       return jsonError(`Supabase delete failed: ${error.message}`, 500);
+    }
+
+    if (data) {
+      await createDemoRecordEvent({
+        demo_record_id: data.id,
+        demo_type: RECRUITMENT_DEMO_TYPE,
+        action: "deleted",
+        title: data.title,
+        details: buildDeletedRecordEventDetails(data),
+      });
     }
 
     return Response.json({
@@ -95,7 +108,7 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const { data, error } = await updateDemoRecord(
+    const { data, error, previousData } = await updateDemoRecord(
       RECRUITMENT_DEMO_TYPE,
       id,
       updates,
@@ -108,6 +121,14 @@ export async function PATCH(request: Request) {
     if (!data) {
       return jsonError("Record not found for this workflow.", 404);
     }
+
+    await createDemoRecordEvent({
+      demo_record_id: data.id,
+      demo_type: RECRUITMENT_DEMO_TYPE,
+      action: "updated",
+      title: data.title,
+      details: buildUpdatedRecordEventDetails(updates, previousData, data),
+    });
 
     return Response.json({
       ok: true,

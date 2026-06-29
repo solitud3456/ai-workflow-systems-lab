@@ -5,6 +5,8 @@ import {
 
 const DEMO_RECORD_SELECT =
   "id, demo_type, title, status, source, raw_input, internal_notes, analysis, analysis_approved, created_at, updated_at";
+const DEMO_RECORD_EVENT_SELECT =
+  "id, demo_record_id, demo_type, action, title, details, created_at";
 
 export type DemoRecordInsert = {
   demo_type: string;
@@ -23,6 +25,24 @@ export type DemoRecordUpdate = {
   source?: string | null;
   analysis_approved?: boolean;
   internal_notes?: string | null;
+};
+
+type DemoRecordSnapshot = {
+  id: string;
+  demo_type: string;
+  title: string;
+  status: string;
+  source: string | null;
+  internal_notes: string | null;
+  analysis_approved: boolean;
+};
+
+type DemoRecordEventInsert = {
+  demo_record_id: string | null;
+  demo_type: string;
+  action: string;
+  title: string | null;
+  details: unknown;
 };
 
 const SAFE_UPDATE_FIELDS = [
@@ -247,7 +267,9 @@ export async function deleteDemoRecord(demoType: string, id: string) {
     .from("demo_records")
     .delete()
     .eq("demo_type", demoType)
-    .eq("id", id);
+    .eq("id", id)
+    .select(DEMO_RECORD_SELECT)
+    .maybeSingle();
 }
 
 export async function updateDemoRecord(
@@ -256,12 +278,84 @@ export async function updateDemoRecord(
   updates: DemoRecordUpdate,
 ) {
   const supabase = getSupabaseAdminClient();
+  const { data: previousData, error: loadError } = await supabase
+    .from("demo_records")
+    .select(DEMO_RECORD_SELECT)
+    .eq("demo_type", demoType)
+    .eq("id", id)
+    .maybeSingle();
 
-  return supabase
+  if (loadError) {
+    return {
+      data: null,
+      error: loadError,
+      previousData: null,
+    };
+  }
+
+  if (!previousData) {
+    return {
+      data: null,
+      error: null,
+      previousData: null,
+    };
+  }
+
+  const { data, error } = await supabase
     .from("demo_records")
     .update(updates)
     .eq("demo_type", demoType)
     .eq("id", id)
     .select(DEMO_RECORD_SELECT)
     .maybeSingle();
+
+  return {
+    data,
+    error,
+    previousData,
+  };
+}
+
+export function buildUpdatedRecordEventDetails(
+  updates: DemoRecordUpdate,
+  previousRecord: DemoRecordSnapshot | null,
+  updatedRecord: DemoRecordSnapshot | null,
+) {
+  return Object.entries(updates).reduce<Record<string, { from: unknown; to: unknown }>>(
+    (details, [field, value]) => {
+      details[field] = {
+        from: previousRecord?.[field as keyof DemoRecordSnapshot] ?? null,
+        to: updatedRecord?.[field as keyof DemoRecordSnapshot] ?? value,
+      };
+
+      return details;
+    },
+    {},
+  );
+}
+
+export function buildDeletedRecordEventDetails(
+  record: DemoRecordSnapshot,
+) {
+  return {
+    title: record.title,
+    status: record.status,
+    source: record.source,
+  };
+}
+
+export async function createDemoRecordEvent(event: DemoRecordEventInsert) {
+  const supabase = getSupabaseAdminClient();
+
+  return supabase.from("demo_record_events").insert(event);
+}
+
+export async function loadDemoRecordEvents(limit = 100) {
+  const supabase = getSupabaseAdminClient();
+
+  return supabase
+    .from("demo_record_events")
+    .select(DEMO_RECORD_EVENT_SELECT)
+    .order("created_at", { ascending: false })
+    .limit(limit);
 }

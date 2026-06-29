@@ -589,6 +589,12 @@ export default function WorkflowBoardClient() {
             >
               Open records viewer
             </Link>
+            <Link
+              href="/internal/activity-log"
+              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
+            >
+              Open activity log
+            </Link>
             <p className="mt-3 text-xs leading-5 text-slate-400">
               {lastLoadedAt
                 ? `Last refreshed: ${lastLoadedAt}`
