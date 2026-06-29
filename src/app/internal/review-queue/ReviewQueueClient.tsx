@@ -59,6 +59,7 @@ type ErrorsByWorkflow = Partial<Record<WorkflowKey, string>>;
 type ActionMessage = {
   kind: "success" | "error";
   text: string;
+  showTaskQueueLink?: boolean;
 } | null;
 
 type TaskAutomationReason =
@@ -71,6 +72,14 @@ type TaskAutomationResult = {
   reason: TaskAutomationReason | null;
   duplicatesSkipped: number;
   candidateTasks: number;
+};
+
+type BulkTaskAutomationResult = {
+  processedRecords: number;
+  tasksCreated: number;
+  skippedNoAnalysis: number;
+  skippedNoActionFields: number;
+  duplicatesSkipped: number;
 };
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -380,6 +389,48 @@ async function createTasksFromRecord(record: DemoRecord) {
   } satisfies TaskAutomationResult;
 }
 
+async function createTasksForApprovedRecords() {
+  const response = await fetch(
+    "/api/automation/create-tasks-for-approved-records",
+    {
+      method: "POST",
+    },
+  );
+
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The API response was not valid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(getApiError(body, "The bulk automation request failed."));
+  }
+
+  if (!isObjectRecord(body) || body.ok !== true) {
+    throw new Error("The API response did not confirm bulk task generation.");
+  }
+
+  return {
+    processedRecords:
+      typeof body.processedRecords === "number" ? body.processedRecords : 0,
+    tasksCreated:
+      typeof body.tasksCreated === "number" ? body.tasksCreated : 0,
+    skippedNoAnalysis:
+      typeof body.skippedNoAnalysis === "number" ? body.skippedNoAnalysis : 0,
+    skippedNoActionFields:
+      typeof body.skippedNoActionFields === "number"
+        ? body.skippedNoActionFields
+        : 0,
+    duplicatesSkipped:
+      typeof body.duplicatesSkipped === "number"
+        ? body.duplicatesSkipped
+        : 0,
+  } satisfies BulkTaskAutomationResult;
+}
+
 function getTaskAutomationMessage(
   record: DemoRecord,
   result: TaskAutomationResult,
@@ -403,6 +454,18 @@ function getTaskAutomationMessage(
   }
 
   return `No new tasks created for "${record.title}".`;
+}
+
+function getBulkTaskAutomationMessage(result: BulkTaskAutomationResult) {
+  return `Approved task generation complete: ${result.processedRecords} record${
+    result.processedRecords === 1 ? "" : "s"
+  } processed, ${result.tasksCreated} task${
+    result.tasksCreated === 1 ? "" : "s"
+  } created, ${result.skippedNoAnalysis} skipped with no analysis, ${
+    result.skippedNoActionFields
+  } skipped with no action fields, ${result.duplicatesSkipped} duplicate task${
+    result.duplicatesSkipped === 1 ? "" : "s"
+  } skipped.`;
 }
 
 function matchesSearch(record: DemoRecord, query: string) {
@@ -613,6 +676,8 @@ export default function ReviewQueueClient() {
   const [selectedRecordKeys, setSelectedRecordKeys] = useState<string[]>([]);
   const [bulkStatus, setBulkStatus] = useState("");
   const [isBulkSaving, setIsBulkSaving] = useState(false);
+  const [isGeneratingApprovedTasks, setIsGeneratingApprovedTasks] =
+    useState(false);
   const [workflowFilter, setWorkflowFilter] =
     useState<WorkflowFilter>("all");
   const [approvalFilter, setApprovalFilter] =
@@ -682,7 +747,8 @@ export default function ReviewQueueClient() {
     filteredRecords.length > 0 &&
     selectedVisibleCount === filteredRecords.length;
   const hasSelectedRecords = selectedRecords.length > 0;
-  const isAnySaving = Boolean(savingRecordKey) || isBulkSaving;
+  const isAnySaving =
+    Boolean(savingRecordKey) || isBulkSaving || isGeneratingApprovedTasks;
   const approvedCount = records.filter(
     (record) => record.analysis_approved,
   ).length;
@@ -915,6 +981,36 @@ export default function ReviewQueueClient() {
     },
     [loadRecords, selectedRecords],
   );
+
+  const handleGenerateTasksForApprovedRecords = useCallback(async () => {
+    const confirmed = window.confirm(
+      "Generate tasks from all approved records?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionMessage(null);
+    setIsGeneratingApprovedTasks(true);
+
+    try {
+      const result = await createTasksForApprovedRecords();
+
+      setActionMessage({
+        kind: "success",
+        text: getBulkTaskAutomationMessage(result),
+        showTaskQueueLink: true,
+      });
+    } catch (error) {
+      setActionMessage({
+        kind: "error",
+        text: getErrorMessage(error),
+      });
+    } finally {
+      setIsGeneratingApprovedTasks(false);
+    }
+  }, []);
 
   const handleCreateTasks = useCallback(async (record: DemoRecord) => {
     setActionMessage(null);
@@ -1211,18 +1307,44 @@ export default function ReviewQueueClient() {
               {isBulkSaving ? "Applying..." : "Set selected status"}
             </button>
           </div>
+
+          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-slate-300">
+              Generate task queue items from all approved records using saved
+              analysis JSON. This skips records without usable action fields
+              and avoids duplicate task titles for the same source record.
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleGenerateTasksForApprovedRecords()}
+              disabled={isAnySaving || approvedCount === 0}
+              className="w-fit rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isGeneratingApprovedTasks
+                ? "Generating..."
+                : "Generate tasks for approved records"}
+            </button>
+          </div>
         </section>
 
         {actionMessage ? (
-          <p
+          <div
             className={
               actionMessage.kind === "success"
                 ? "mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-200"
                 : "mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-200"
             }
           >
-            {actionMessage.text}
-          </p>
+            <p>{actionMessage.text}</p>
+            {actionMessage.showTaskQueueLink ? (
+              <Link
+                href="/internal/task-queue"
+                className="mt-3 inline-flex rounded-lg border border-emerald-400/50 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-300 hover:text-white"
+              >
+                Open task queue
+              </Link>
+            ) : null}
+          </div>
         ) : null}
 
         {workflowErrorCount > 0 ? (
