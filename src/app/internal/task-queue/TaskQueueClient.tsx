@@ -108,12 +108,17 @@ type WorkflowAutomationRunResult = {
   duplicatesSkipped: number;
 };
 
+type CompanyDaySimulationRunResult = {
+  recordsCreated: number;
+  recordsSkipped: number;
+  automation: WorkflowAutomationRunResult;
+};
+
 type IntakeTestFormState = {
   demoType: string;
   title: string;
   source: string;
   internalNotes: string;
-  runAutomation: boolean;
 };
 
 type WorkflowIntakeTestResult = {
@@ -140,7 +145,6 @@ const emptyIntakeTestForm: IntakeTestFormState = {
   title: "",
   source: "",
   internalNotes: "",
-  runAutomation: false,
 };
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -390,7 +394,65 @@ function buildIntakeTestPayload(form: IntakeTestFormState) {
     internalNotes: form.internalNotes.trim() || null,
     analysis: null,
     analysisApproved: false,
-    runAutomation: form.runAutomation,
+    runAutomation: false,
+  };
+}
+
+async function runCompanyDaySimulation(): Promise<CompanyDaySimulationRunResult> {
+  const response = await fetch("/api/automation/run-company-day-simulation", {
+    method: "POST",
+  });
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The API response was not valid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      getApiError(body, "The company day simulation request failed."),
+    );
+  }
+
+  if (!isObjectRecord(body) || body.ok !== true) {
+    throw new Error("The API response did not confirm simulation.");
+  }
+
+  const automation = isObjectRecord(body.automation) ? body.automation : {};
+
+  return {
+    recordsCreated:
+      typeof body.recordsCreated === "number" ? body.recordsCreated : 0,
+    recordsSkipped:
+      typeof body.recordsSkipped === "number" ? body.recordsSkipped : 0,
+    automation: {
+      recordsScanned:
+        typeof automation.recordsScanned === "number"
+          ? automation.recordsScanned
+          : 0,
+      recordsAutoAnalyzed:
+        typeof automation.recordsAutoAnalyzed === "number"
+          ? automation.recordsAutoAnalyzed
+          : 0,
+      recordsUpdated:
+        typeof automation.recordsUpdated === "number"
+          ? automation.recordsUpdated
+          : 0,
+      tasksCreated:
+        typeof automation.tasksCreated === "number"
+          ? automation.tasksCreated
+          : 0,
+      tasksUpdated:
+        typeof automation.tasksUpdated === "number"
+          ? automation.tasksUpdated
+          : 0,
+      duplicatesSkipped:
+        typeof automation.duplicatesSkipped === "number"
+          ? automation.duplicatesSkipped
+          : 0,
+    },
   };
 }
 
@@ -453,6 +515,16 @@ function getWorkflowAutomationMessage(result: WorkflowAutomationRunResult) {
   } updated, ${result.duplicatesSkipped} duplicate task${
     result.duplicatesSkipped === 1 ? "" : "s"
   } skipped.`;
+}
+
+function getCompanyDaySimulationMessage(result: CompanyDaySimulationRunResult) {
+  return `Simulation complete: ${result.recordsCreated} record${
+    result.recordsCreated === 1 ? "" : "s"
+  } created, ${result.recordsSkipped} skipped, ${
+    result.automation.recordsAutoAnalyzed
+  } analyzed, ${result.automation.recordsUpdated} updated, ${
+    result.automation.tasksCreated
+  } task${result.automation.tasksCreated === 1 ? "" : "s"} created.`;
 }
 
 function getWorkflowIntakeTestMessage(result: WorkflowIntakeTestResult) {
@@ -696,6 +768,8 @@ export default function TaskQueueClient() {
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
   const [isRunningWorkflowAutomation, setIsRunningWorkflowAutomation] =
     useState(false);
+  const [isRunningCompanyDaySimulation, setIsRunningCompanyDaySimulation] =
+    useState(false);
   const [intakeTestForm, setIntakeTestForm] =
     useState<IntakeTestFormState>(emptyIntakeTestForm);
   const [isSendingIntakeTest, setIsSendingIntakeTest] = useState(false);
@@ -823,6 +897,35 @@ export default function TaskQueueClient() {
       });
     } finally {
       setIsRunningWorkflowAutomation(false);
+    }
+  }, [loadTasks]);
+
+  const handleRunCompanyDaySimulation = useCallback(async () => {
+    const confirmed = window.confirm("Run company day simulation?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsRunningCompanyDaySimulation(true);
+    setActionMessage(null);
+
+    try {
+      const result = await runCompanyDaySimulation();
+
+      setActionMessage({
+        kind: "success",
+        text: getCompanyDaySimulationMessage(result),
+        showActivityLogLink: true,
+      });
+      await loadTasks();
+    } catch (error) {
+      setActionMessage({
+        kind: "error",
+        text: getErrorMessage(error),
+      });
+    } finally {
+      setIsRunningCompanyDaySimulation(false);
     }
   }, [loadTasks]);
 
@@ -1049,10 +1152,24 @@ export default function TaskQueueClient() {
               <button
                 type="button"
                 onClick={() => void handleRunWorkflowAutomation()}
-                disabled={isRunningWorkflowAutomation}
+                disabled={
+                  isRunningWorkflowAutomation || isRunningCompanyDaySimulation
+                }
                 className="w-fit rounded-lg border border-cyan-400/60 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isRunningWorkflowAutomation ? "Running..." : "Run automation"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRunCompanyDaySimulation()}
+                disabled={
+                  isRunningWorkflowAutomation || isRunningCompanyDaySimulation
+                }
+                className="w-fit rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRunningCompanyDaySimulation
+                  ? "Running..."
+                  : "Run company day simulation"}
               </button>
             </div>
           </div>
@@ -1124,20 +1241,6 @@ export default function TaskQueueClient() {
             </label>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-              <input
-                type="checkbox"
-                checked={intakeTestForm.runAutomation}
-                onChange={(event) =>
-                  setIntakeTestForm((form) => ({
-                    ...form,
-                    runAutomation: event.target.checked,
-                  }))
-                }
-                className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400"
-              />
-              Run automation
-            </label>
             <button
               type="button"
               onClick={() => void handleSendTestIntake()}
