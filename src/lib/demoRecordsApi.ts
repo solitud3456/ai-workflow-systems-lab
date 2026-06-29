@@ -33,7 +33,9 @@ type DemoRecordSnapshot = {
   title: string;
   status: string;
   source: string | null;
+  raw_input: string | null;
   internal_notes: string | null;
+  analysis: unknown;
   analysis_approved: boolean;
 };
 
@@ -224,6 +226,17 @@ export async function loadDemoRecords(demoType: string) {
     .select(DEMO_RECORD_SELECT)
     .eq("demo_type", demoType)
     .order("created_at", { ascending: false });
+}
+
+export async function loadDemoRecordById(demoType: string, id: string) {
+  const supabase = getSupabaseAdminClient();
+
+  return supabase
+    .from("demo_records")
+    .select(DEMO_RECORD_SELECT)
+    .eq("demo_type", demoType)
+    .eq("id", id)
+    .maybeSingle();
 }
 
 export async function replaceDemoRecords(

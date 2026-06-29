@@ -52,3 +52,30 @@ comment on column public.demo_record_events.details is
 -- Keep browser access closed until authentication and explicit policies are
 -- designed in a later phase. Server-side admin API routes can still write.
 alter table public.demo_record_events enable row level security;
+
+create table if not exists public.demo_tasks (
+  id uuid primary key default gen_random_uuid(),
+  demo_record_id uuid,
+  demo_type text not null,
+  title text not null,
+  status text not null default 'Open',
+  priority text not null default 'Normal',
+  source_record_title text,
+  notes text,
+  due_date date,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.demo_tasks is
+  'Internal workflow tasks generated from saved demo records or created manually through internal tools.';
+
+comment on column public.demo_tasks.demo_record_id is
+  'Optional related demo_records id when a task was generated from a saved workflow record.';
+
+comment on column public.demo_tasks.demo_type is
+  'Workflow identifier such as lead_follow_up, recruitment_assistant, or document_intake.';
+
+-- Keep browser access closed until authentication and explicit policies are
+-- designed in a later phase. Server-side admin API routes can still write.
+alter table public.demo_tasks enable row level security;
