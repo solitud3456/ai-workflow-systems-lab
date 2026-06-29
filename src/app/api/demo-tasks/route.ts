@@ -13,6 +13,12 @@ import {
   mapDemoTaskUpdateBody,
   updateDemoTask,
 } from "@/lib/demoTasksApi";
+import {
+  buildTaskEventDetails,
+  buildUpdatedTaskEventDetails,
+  createTaskActivityEvent,
+  normalizeTaskEventRecord,
+} from "@/lib/taskActivity";
 
 export async function GET() {
   if (!areInternalToolsEnabled()) {
@@ -61,6 +67,16 @@ export async function POST(request: Request) {
       return jsonError(`Supabase task create failed: ${error.message}`, 500);
     }
 
+    if (data) {
+      await createTaskActivityEvent({
+        action: "task_created",
+        task: data,
+        details: buildTaskEventDetails(data, {
+          source: "manual",
+        }),
+      });
+    }
+
     return Response.json({
       ok: true,
       task: data,
@@ -96,7 +112,7 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const { data, error } = await updateDemoTask(id, updates);
+    const { data, error, previousData } = await updateDemoTask(id, updates);
 
     if (error) {
       return jsonError(`Supabase task update failed: ${error.message}`, 500);
@@ -105,6 +121,19 @@ export async function PATCH(request: Request) {
     if (!data) {
       return jsonError("Task not found.", 404);
     }
+
+    const previousTask = normalizeTaskEventRecord(previousData);
+    const updatedTask = normalizeTaskEventRecord(data, previousTask);
+    const action =
+      updates.status === "Done" && previousTask.status !== "Done"
+        ? "task_completed"
+        : "task_updated";
+
+    await createTaskActivityEvent({
+      action,
+      task: updatedTask,
+      details: buildUpdatedTaskEventDetails(updates, previousTask, updatedTask),
+    });
 
     return Response.json({
       ok: true,
@@ -127,10 +156,18 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { error } = await deleteDemoTask(id);
+    const { data, error } = await deleteDemoTask(id);
 
     if (error) {
       return jsonError(`Supabase task delete failed: ${error.message}`, 500);
+    }
+
+    if (data) {
+      await createTaskActivityEvent({
+        action: "task_deleted",
+        task: data,
+        details: buildTaskEventDetails(data),
+      });
     }
 
     return Response.json({

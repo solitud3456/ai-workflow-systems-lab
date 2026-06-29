@@ -200,6 +200,16 @@ export async function loadDemoTasksForRecord(recordId: string) {
     .eq("demo_record_id", recordId);
 }
 
+export async function loadDemoTaskById(id: string) {
+  const supabase = getSupabaseAdminClient();
+
+  return supabase
+    .from("demo_tasks")
+    .select(DEMO_TASK_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+}
+
 export async function createDemoTask(task: DemoTaskInsert) {
   const supabase = getSupabaseAdminClient();
 
@@ -221,17 +231,45 @@ export async function createDemoTasks(tasks: DemoTaskInsert[]) {
 
 export async function updateDemoTask(id: string, updates: DemoTaskUpdate) {
   const supabase = getSupabaseAdminClient();
+  const { data: previousData, error: loadError } = await loadDemoTaskById(id);
 
-  return supabase
+  if (loadError) {
+    return {
+      data: null,
+      error: loadError,
+      previousData: null,
+    };
+  }
+
+  if (!previousData) {
+    return {
+      data: null,
+      error: null,
+      previousData: null,
+    };
+  }
+
+  const { data, error } = await supabase
     .from("demo_tasks")
     .update(updates)
     .eq("id", id)
     .select(DEMO_TASK_SELECT)
     .maybeSingle();
+
+  return {
+    data,
+    error,
+    previousData,
+  };
 }
 
 export async function deleteDemoTask(id: string) {
   const supabase = getSupabaseAdminClient();
 
-  return supabase.from("demo_tasks").delete().eq("id", id);
+  return supabase
+    .from("demo_tasks")
+    .delete()
+    .eq("id", id)
+    .select(DEMO_TASK_SELECT)
+    .maybeSingle();
 }

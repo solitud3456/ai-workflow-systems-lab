@@ -4,6 +4,10 @@ import {
   loadDemoTasksForRecord,
   type DemoTaskInsert,
 } from "@/lib/demoTasksApi";
+import {
+  buildTaskEventDetails,
+  createTaskActivityEvent,
+} from "@/lib/taskActivity";
 
 export type TaskSkipReason =
   | "no_analysis"
@@ -250,6 +254,9 @@ function buildResult(
 
 export async function createTasksForDemoRecord(
   record: DemoRecordForTaskAutomation,
+  options: {
+    automationMode?: string;
+  } = {},
 ): Promise<TaskAutomationResult> {
   const candidateResult = getTaskCandidates(record);
   const candidateTasks = candidateResult.tasks;
@@ -292,6 +299,21 @@ export async function createTasksForDemoRecord(
   if (createError) {
     throw new Error(`Supabase task create failed: ${createError.message}`);
   }
+
+  await Promise.all(
+    (tasks ?? []).map((task) =>
+      createTaskActivityEvent({
+        action: "task_created",
+        task,
+        details: buildTaskEventDetails(task, {
+          source: "automation",
+          automation_mode: options.automationMode ?? "single_record",
+          source_demo_record_id: record.id,
+          source_record_title: record.title,
+        }),
+      }),
+    ),
+  );
 
   return buildResult(record, {
     tasksCreated: tasks?.length ?? 0,

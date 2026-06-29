@@ -87,7 +87,9 @@ export async function POST(request: Request) {
       return jsonError("Record could not be mapped for task automation.", 500);
     }
 
-    const result = await createTasksForDemoRecord(taskRecord);
+    const result = await createTasksForDemoRecord(taskRecord, {
+      automationMode: "single_record",
+    });
 
     return taskResponse(result);
   } catch (error) {

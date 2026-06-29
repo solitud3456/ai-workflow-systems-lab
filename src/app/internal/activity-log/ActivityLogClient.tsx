@@ -82,6 +82,22 @@ function formatDetails(details: unknown) {
   return JSON.stringify(details, null, 2);
 }
 
+function getActionBadgeClass(action: string) {
+  if (action === "deleted" || action === "task_deleted") {
+    return "rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-200";
+  }
+
+  if (action === "task_completed") {
+    return "rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300";
+  }
+
+  if (action === "task_created" || action === "bulk_tasks_generated") {
+    return "rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200";
+  }
+
+  return "rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-200";
+}
+
 async function fetchEvents() {
   const response = await fetch("/api/demo-record-events", {
     cache: "no-store",
@@ -115,22 +131,16 @@ function ActivityEventCard({ event }: { event: DemoRecordEvent }) {
             <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200">
               {event.demo_type}
             </span>
-            <span
-              className={
-                event.action === "deleted"
-                  ? "rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-200"
-                  : "rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300"
-              }
-            >
+            <span className={getActionBadgeClass(event.action)}>
               {event.action}
             </span>
           </div>
 
           <h3 className="mt-3 text-base font-semibold text-white">
-            {event.title || "Untitled record"}
+            {event.title || "Untitled event"}
           </h3>
           <p className="mt-1 text-sm text-slate-400">
-            Record id: {event.demo_record_id || "Not set"}
+            Related record id: {event.demo_record_id || "Not set"}
           </p>
         </div>
 
@@ -192,7 +202,7 @@ export default function ActivityLogClient() {
           <PageHeader
             eyebrow="Internal"
             title="Activity Log"
-            description="A development-only audit trail for internal Supabase record updates and deletes across the workflow demos."
+            description="A development-only audit trail for internal Supabase record, task, and automation events across the workflow demos."
           />
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 lg:min-w-64">
@@ -241,9 +251,9 @@ export default function ActivityLogClient() {
             Internal audit trail
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            Events are written by server-side API routes after internal PATCH
-            and DELETE actions. GET requests and public demo localStorage
-            changes are not logged here.
+            Events are written by server-side API routes after internal record
+            edits, task actions, and task automation. GET requests and public
+            demo localStorage changes are not logged here.
           </p>
         </section>
 

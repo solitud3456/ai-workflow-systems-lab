@@ -12,6 +12,7 @@ import {
   type DemoRecordForTaskAutomation,
   type TaskAutomationResult,
 } from "@/lib/taskAutomation";
+import { createAutomationActivityEvent } from "@/lib/taskActivity";
 
 const demoTypes = [
   "lead_follow_up",
@@ -71,10 +72,32 @@ export async function POST() {
     const results: TaskAutomationResult[] = [];
 
     for (const record of approvedRecords) {
-      results.push(await createTasksForDemoRecord(record));
+      results.push(
+        await createTasksForDemoRecord(record, {
+          automationMode: "approved_records",
+        }),
+      );
     }
 
     const summary = summarizeResults(results);
+
+    if (summary.tasksCreated > 0) {
+      await createAutomationActivityEvent({
+        title: "Generated tasks for approved records",
+        details: {
+          processedRecords: approvedRecords.length,
+          ...summary,
+          createdRecords: results
+            .filter((result) => result.tasksCreated > 0)
+            .map((result) => ({
+              demo_record_id: result.recordId,
+              demo_type: result.demoType,
+              title: result.recordTitle,
+              tasksCreated: result.tasksCreated,
+            })),
+        },
+      });
+    }
 
     return Response.json({
       ok: true,
