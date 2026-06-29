@@ -61,6 +61,18 @@ type ActionMessage = {
   text: string;
 } | null;
 
+type TaskAutomationReason =
+  | "no_analysis"
+  | "no_action_fields"
+  | "duplicates_skipped";
+
+type TaskAutomationResult = {
+  tasksCreated: number;
+  reason: TaskAutomationReason | null;
+  duplicatesSkipped: number;
+  candidateTasks: number;
+};
+
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -322,6 +334,77 @@ async function updateReviewRecord(record: DemoRecord, updates: ReviewUpdate) {
   }
 }
 
+async function createTasksFromRecord(record: DemoRecord) {
+  const response = await fetch("/api/automation/create-tasks-from-record", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      recordId: record.id,
+      demoType: record.demo_type,
+    }),
+  });
+
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The API response was not valid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(getApiError(body, "The automation request failed."));
+  }
+
+  if (!isObjectRecord(body) || body.ok !== true) {
+    throw new Error("The API response did not confirm task creation.");
+  }
+
+  return {
+    tasksCreated:
+      typeof body.tasksCreated === "number" ? body.tasksCreated : 0,
+    reason:
+      body.reason === "no_analysis" ||
+      body.reason === "no_action_fields" ||
+      body.reason === "duplicates_skipped"
+        ? body.reason
+        : null,
+    duplicatesSkipped:
+      typeof body.duplicatesSkipped === "number"
+        ? body.duplicatesSkipped
+        : 0,
+    candidateTasks:
+      typeof body.candidateTasks === "number" ? body.candidateTasks : 0,
+  } satisfies TaskAutomationResult;
+}
+
+function getTaskAutomationMessage(
+  record: DemoRecord,
+  result: TaskAutomationResult,
+) {
+  if (result.tasksCreated > 0) {
+    return `Created ${result.tasksCreated} task${
+      result.tasksCreated === 1 ? "" : "s"
+    } for "${record.title}".`;
+  }
+
+  if (result.reason === "no_analysis") {
+    return "No saved analysis yet, so no tasks can be generated.";
+  }
+
+  if (result.reason === "no_action_fields") {
+    return "Analysis exists, but no next action/action items were found.";
+  }
+
+  if (result.reason === "duplicates_skipped") {
+    return "Tasks already exist for this record.";
+  }
+
+  return `No new tasks created for "${record.title}".`;
+}
+
 function matchesSearch(record: DemoRecord, query: string) {
   if (!query) {
     return true;
@@ -362,18 +445,22 @@ function QueueMetric({
 function ReviewQueueCard({
   record,
   draft,
+  isCreatingTasks,
   isSelected,
   isSaving,
   statusOptions,
+  onCreateTasks,
   onDraftChange,
   onSave,
   onSelectedChange,
 }: {
   record: DemoRecord;
   draft: ReviewDraft;
+  isCreatingTasks: boolean;
   isSelected: boolean;
   isSaving: boolean;
   statusOptions: string[];
+  onCreateTasks: () => void;
   onDraftChange: (updates: Partial<ReviewDraft>) => void;
   onSave: () => void;
   onSelectedChange: (selected: boolean) => void;
@@ -450,7 +537,7 @@ function ReviewQueueCard({
         </p>
       </div>
 
-      <div className="mt-4 grid gap-4 rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-4 lg:grid-cols-[1fr_auto_auto] lg:items-end">
+      <div className="mt-4 grid gap-4 rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-4 lg:grid-cols-[1fr_auto_auto_auto] lg:items-end">
         <label className="text-sm font-semibold text-slate-200">
           Update status
           <select
@@ -490,6 +577,15 @@ function ReviewQueueCard({
 
         <button
           type="button"
+          onClick={onCreateTasks}
+          disabled={isSaving || isCreatingTasks}
+          className="rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isCreatingTasks ? "Creating..." : "Create tasks"}
+        </button>
+
+        <button
+          type="button"
           onClick={onSave}
           disabled={isSaving || !hasChanges || !nextStatus}
           className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
@@ -511,6 +607,9 @@ export default function ReviewQueueClient() {
   const [lastLoadedAt, setLastLoadedAt] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<ActionMessage>(null);
   const [savingRecordKey, setSavingRecordKey] = useState<string | null>(null);
+  const [creatingTasksRecordKey, setCreatingTasksRecordKey] = useState<
+    string | null
+  >(null);
   const [selectedRecordKeys, setSelectedRecordKeys] = useState<string[]>([]);
   const [bulkStatus, setBulkStatus] = useState("");
   const [isBulkSaving, setIsBulkSaving] = useState(false);
@@ -817,6 +916,27 @@ export default function ReviewQueueClient() {
     [loadRecords, selectedRecords],
   );
 
+  const handleCreateTasks = useCallback(async (record: DemoRecord) => {
+    setActionMessage(null);
+    setCreatingTasksRecordKey(record.queueKey);
+
+    try {
+      const result = await createTasksFromRecord(record);
+
+      setActionMessage({
+        kind: "success",
+        text: getTaskAutomationMessage(record, result),
+      });
+    } catch (error) {
+      setActionMessage({
+        kind: "error",
+        text: getErrorMessage(error),
+      });
+    } finally {
+      setCreatingTasksRecordKey(null);
+    }
+  }, []);
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void loadRecords();
@@ -861,6 +981,12 @@ export default function ReviewQueueClient() {
               className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
             >
               Open activity log
+            </Link>
+            <Link
+              href="/internal/task-queue"
+              className="mt-3 block rounded-lg border border-slate-700 px-4 py-2 text-center text-sm font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300"
+            >
+              Open task queue
             </Link>
             <p className="mt-3 text-xs leading-5 text-slate-400">
               {lastLoadedAt
@@ -1147,9 +1273,11 @@ export default function ReviewQueueClient() {
                   key={record.queueKey}
                   record={record}
                   draft={drafts[record.queueKey] ?? buildDraft(record)}
+                  isCreatingTasks={creatingTasksRecordKey === record.queueKey}
                   isSelected={selectedRecordKeySet.has(record.queueKey)}
                   isSaving={savingRecordKey === record.queueKey || isBulkSaving}
                   statusOptions={statusOptions}
+                  onCreateTasks={() => void handleCreateTasks(record)}
                   onDraftChange={(updates) =>
                     handleDraftChange(record, updates)
                   }
