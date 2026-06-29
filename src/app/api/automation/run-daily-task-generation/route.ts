@@ -14,14 +14,18 @@ export async function POST() {
 
   try {
     const summary = await createTasksForApprovedDemoRecords({
-      automationMode: "approved_records",
+      automationMode: "daily_task_generation",
       logActivity: true,
-      activityAction: "bulk_tasks_generated",
-      activityTitle: "Generated tasks for approved records",
+      activityAction: "automation_run",
+      activityTitle: "Daily task generation",
+      logWhenNoTasks: true,
+      activityRunType: "daily_task_generation",
+      includeResultsInActivity: true,
     });
 
     return Response.json({
       ok: true,
+      runType: "daily_task_generation",
       processedRecords: summary.processedRecords,
       tasksCreated: summary.tasksCreated,
       skippedNoAnalysis: summary.skippedNoAnalysis,

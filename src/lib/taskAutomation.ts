@@ -1,4 +1,4 @@
-import { isObjectRecord } from "@/lib/demoRecordsApi";
+import { isObjectRecord, loadDemoRecords } from "@/lib/demoRecordsApi";
 import {
   createDemoTasks,
   loadDemoTasksForRecord,
@@ -6,8 +6,15 @@ import {
 } from "@/lib/demoTasksApi";
 import {
   buildTaskEventDetails,
+  createAutomationActivityEvent,
   createTaskActivityEvent,
 } from "@/lib/taskActivity";
+
+const approvedTaskDemoTypes = [
+  "lead_follow_up",
+  "recruitment_assistant",
+  "document_intake",
+] as const;
 
 export type TaskSkipReason =
   | "no_analysis"
@@ -32,6 +39,15 @@ export type TaskAutomationResult = {
   reason: TaskSkipReason | null;
   duplicatesSkipped: number;
   candidateTasks: number;
+};
+
+export type ApprovedTaskGenerationSummary = {
+  processedRecords: number;
+  tasksCreated: number;
+  skippedNoAnalysis: number;
+  skippedNoActionFields: number;
+  duplicatesSkipped: number;
+  results: TaskAutomationResult[];
 };
 
 function parseMaybeJson(value: unknown) {
@@ -89,6 +105,12 @@ export function mapDemoRecordForTaskAutomation(
         ? record.analysis_approved
         : false,
   };
+}
+
+function isTaskRecord(
+  record: DemoRecordForTaskAutomation | null,
+): record is DemoRecordForTaskAutomation {
+  return Boolean(record);
 }
 
 function buildTask(
@@ -322,4 +344,116 @@ export async function createTasksForDemoRecord(
     duplicatesSkipped,
     candidateTasks: candidateTasks.length,
   });
+}
+
+function summarizeApprovedResults(
+  processedRecords: number,
+  results: TaskAutomationResult[],
+): ApprovedTaskGenerationSummary {
+  return {
+    processedRecords,
+    tasksCreated: results.reduce(
+      (total, result) => total + result.tasksCreated,
+      0,
+    ),
+    skippedNoAnalysis: results.filter(
+      (result) => result.reason === "no_analysis",
+    ).length,
+    skippedNoActionFields: results.filter(
+      (result) => result.reason === "no_action_fields",
+    ).length,
+    duplicatesSkipped: results.reduce(
+      (total, result) => total + result.duplicatesSkipped,
+      0,
+    ),
+    results,
+  };
+}
+
+function getCreatedRecordSummaries(results: TaskAutomationResult[]) {
+  return results
+    .filter((result) => result.tasksCreated > 0)
+    .map((result) => ({
+      demo_record_id: result.recordId,
+      demo_type: result.demoType,
+      title: result.recordTitle,
+      tasksCreated: result.tasksCreated,
+    }));
+}
+
+export function buildApprovedTaskGenerationEventDetails(
+  summary: ApprovedTaskGenerationSummary,
+) {
+  return {
+    processedRecords: summary.processedRecords,
+    tasksCreated: summary.tasksCreated,
+    skippedNoAnalysis: summary.skippedNoAnalysis,
+    skippedNoActionFields: summary.skippedNoActionFields,
+    duplicatesSkipped: summary.duplicatesSkipped,
+    createdRecords: getCreatedRecordSummaries(summary.results),
+  };
+}
+
+export async function createTasksForApprovedDemoRecords({
+  automationMode = "approved_records",
+  logActivity = false,
+  activityAction = "bulk_tasks_generated",
+  activityTitle = "Generated tasks for approved records",
+  logWhenNoTasks = false,
+  activityRunType,
+  includeResultsInActivity = false,
+}: {
+  automationMode?: string;
+  logActivity?: boolean;
+  activityAction?: "bulk_tasks_generated" | "automation_run";
+  activityTitle?: string;
+  logWhenNoTasks?: boolean;
+  activityRunType?: string;
+  includeResultsInActivity?: boolean;
+} = {}): Promise<ApprovedTaskGenerationSummary> {
+  const recordsByDemoType = await Promise.all(
+    approvedTaskDemoTypes.map(async (demoType) => {
+      const { data, error } = await loadDemoRecords(demoType);
+
+      if (error) {
+        throw new Error(
+          `Supabase ${demoType} record load failed: ${error.message}`,
+        );
+      }
+
+      return data ?? [];
+    }),
+  );
+  const approvedRecords = recordsByDemoType
+    .flat()
+    .map(mapDemoRecordForTaskAutomation)
+    .filter(isTaskRecord)
+    .filter((record) => record.analysis_approved);
+  const results: TaskAutomationResult[] = [];
+
+  for (const record of approvedRecords) {
+    results.push(
+      await createTasksForDemoRecord(record, {
+        automationMode,
+      }),
+    );
+  }
+
+  const summary = summarizeApprovedResults(approvedRecords.length, results);
+
+  if (logActivity && (logWhenNoTasks || summary.tasksCreated > 0)) {
+    const details = {
+      ...buildApprovedTaskGenerationEventDetails(summary),
+      ...(activityRunType ? { runType: activityRunType } : {}),
+      ...(includeResultsInActivity ? { results: summary.results } : {}),
+    };
+
+    await createAutomationActivityEvent({
+      action: activityAction,
+      title: activityTitle,
+      details,
+    });
+  }
+
+  return summary;
 }

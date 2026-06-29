@@ -9,7 +9,8 @@ type TaskActivityAction =
   | "task_updated"
   | "task_completed"
   | "task_deleted"
-  | "bulk_tasks_generated";
+  | "bulk_tasks_generated"
+  | "automation_run";
 
 type TaskEventRecord = {
   id: string | null;
@@ -113,16 +114,21 @@ export async function createTaskActivityEvent({
 }
 
 export async function createAutomationActivityEvent({
+  action = "bulk_tasks_generated",
   title,
   details,
 }: {
+  action?: Extract<
+    TaskActivityAction,
+    "bulk_tasks_generated" | "automation_run"
+  >;
   title: string;
   details: Record<string, unknown>;
 }) {
   return createDemoRecordEvent({
     demo_record_id: null,
     demo_type: "task",
-    action: "bulk_tasks_generated",
+    action,
     title,
     details,
   });

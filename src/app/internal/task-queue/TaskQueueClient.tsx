@@ -71,7 +71,16 @@ type TaskUpdatePayload = {
 type ActionMessage = {
   kind: "success" | "error";
   text: string;
+  showActivityLogLink?: boolean;
 } | null;
+
+type DailyTaskGenerationResult = {
+  processedRecords: number;
+  tasksCreated: number;
+  skippedNoAnalysis: number;
+  skippedNoActionFields: number;
+  duplicatesSkipped: number;
+};
 
 const emptyTaskForm: TaskFormState = {
   title: "",
@@ -271,6 +280,58 @@ async function deleteTask(id: string) {
   if (!response.ok) {
     throw new Error(getApiError(body, "The task delete request failed."));
   }
+}
+
+async function runDailyTaskGeneration() {
+  const response = await fetch("/api/automation/run-daily-task-generation", {
+    method: "POST",
+  });
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The API response was not valid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      getApiError(body, "The daily task generation request failed."),
+    );
+  }
+
+  if (!isObjectRecord(body) || body.ok !== true) {
+    throw new Error("The API response did not confirm daily task generation.");
+  }
+
+  return {
+    processedRecords:
+      typeof body.processedRecords === "number" ? body.processedRecords : 0,
+    tasksCreated:
+      typeof body.tasksCreated === "number" ? body.tasksCreated : 0,
+    skippedNoAnalysis:
+      typeof body.skippedNoAnalysis === "number" ? body.skippedNoAnalysis : 0,
+    skippedNoActionFields:
+      typeof body.skippedNoActionFields === "number"
+        ? body.skippedNoActionFields
+        : 0,
+    duplicatesSkipped:
+      typeof body.duplicatesSkipped === "number"
+        ? body.duplicatesSkipped
+        : 0,
+  } satisfies DailyTaskGenerationResult;
+}
+
+function getDailyTaskGenerationMessage(result: DailyTaskGenerationResult) {
+  return `Daily task generation complete: ${result.processedRecords} approved record${
+    result.processedRecords === 1 ? "" : "s"
+  } processed, ${result.tasksCreated} task${
+    result.tasksCreated === 1 ? "" : "s"
+  } created, ${result.skippedNoAnalysis} skipped with no analysis, ${
+    result.skippedNoActionFields
+  } skipped with no action fields, ${result.duplicatesSkipped} duplicate task${
+    result.duplicatesSkipped === 1 ? "" : "s"
+  } skipped.`;
 }
 
 function TaskCard({
@@ -500,6 +561,8 @@ export default function TaskQueueClient() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditFormState | null>(null);
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
+  const [isRunningDailyGeneration, setIsRunningDailyGeneration] =
+    useState(false);
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
   const [priorityFilter, setPriorityFilter] =
     useState<TaskPriorityFilter>("all");
@@ -597,6 +660,29 @@ export default function TaskQueueClient() {
       setSavingTaskId(null);
     }
   }, [createForm, loadTasks]);
+
+  const handleRunDailyTaskGeneration = useCallback(async () => {
+    setIsRunningDailyGeneration(true);
+    setActionMessage(null);
+
+    try {
+      const result = await runDailyTaskGeneration();
+
+      setActionMessage({
+        kind: "success",
+        text: getDailyTaskGenerationMessage(result),
+        showActivityLogLink: true,
+      });
+      await loadTasks();
+    } catch (error) {
+      setActionMessage({
+        kind: "error",
+        text: getErrorMessage(error),
+      });
+    } finally {
+      setIsRunningDailyGeneration(false);
+    }
+  }, [loadTasks]);
 
   const handleStartEdit = useCallback((task: DemoTask) => {
     setActionMessage(null);
@@ -788,6 +874,31 @@ export default function TaskQueueClient() {
             <p className="mt-3 text-2xl font-semibold text-white">
               {isLoading ? "Loading" : doneCount}
             </p>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-white">
+                Daily task generation
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Run the automation-ready approved-record task generation now.
+                It uses saved analysis JSON only and skips duplicate task
+                titles for the same source record.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleRunDailyTaskGeneration()}
+              disabled={isRunningDailyGeneration}
+              className="w-fit rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isRunningDailyGeneration
+                ? "Running..."
+                : "Run daily task generation"}
+            </button>
           </div>
         </section>
 
@@ -988,15 +1099,23 @@ export default function TaskQueueClient() {
         </section>
 
         {actionMessage ? (
-          <p
+          <div
             className={
               actionMessage.kind === "success"
                 ? "mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-200"
                 : "mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-200"
             }
           >
-            {actionMessage.text}
-          </p>
+            <p>{actionMessage.text}</p>
+            {actionMessage.showActivityLogLink ? (
+              <Link
+                href="/internal/activity-log"
+                className="mt-3 inline-flex rounded-lg border border-emerald-400/50 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-300 hover:text-white"
+              >
+                Open activity log
+              </Link>
+            ) : null}
+          </div>
         ) : null}
 
         <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">

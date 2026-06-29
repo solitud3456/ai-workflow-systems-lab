@@ -91,7 +91,11 @@ function getActionBadgeClass(action: string) {
     return "rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300";
   }
 
-  if (action === "task_created" || action === "bulk_tasks_generated") {
+  if (
+    action === "task_created" ||
+    action === "bulk_tasks_generated" ||
+    action === "automation_run"
+  ) {
     return "rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200";
   }
 
