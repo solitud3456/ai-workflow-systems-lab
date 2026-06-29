@@ -101,9 +101,28 @@ type ActionMessage = {
 
 type WorkflowAutomationRunResult = {
   recordsScanned: number;
-  statusesUpdated: number;
+  recordsAutoAnalyzed: number;
+  recordsUpdated: number;
   tasksCreated: number;
+  tasksUpdated: number;
   duplicatesSkipped: number;
+};
+
+type IntakeTestFormState = {
+  demoType: string;
+  title: string;
+  source: string;
+  internalNotes: string;
+  runAutomation: boolean;
+};
+
+type WorkflowIntakeTestResult = {
+  title: string;
+  automation: {
+    ran: boolean;
+    tasksCreated: number;
+    statusUpdated: boolean;
+  };
 };
 
 const emptyTaskForm: TaskFormState = {
@@ -114,6 +133,14 @@ const emptyTaskForm: TaskFormState = {
   source_record_title: "",
   notes: "",
   due_date: "",
+};
+
+const emptyIntakeTestForm: IntakeTestFormState = {
+  demoType: "lead_follow_up",
+  title: "",
+  source: "",
+  internalNotes: "",
+  runAutomation: false,
 };
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -307,7 +334,7 @@ async function deleteTask(id: string) {
 }
 
 async function runWorkflowAutomation() {
-  const response = await fetch("/api/automation/run-workflow-automation", {
+  const response = await fetch("/api/automation/run-automation-engine", {
     method: "POST",
   });
   let body: unknown;
@@ -331,10 +358,16 @@ async function runWorkflowAutomation() {
   return {
     recordsScanned:
       typeof body.recordsScanned === "number" ? body.recordsScanned : 0,
-    statusesUpdated:
-      typeof body.statusesUpdated === "number" ? body.statusesUpdated : 0,
+    recordsAutoAnalyzed:
+      typeof body.recordsAutoAnalyzed === "number"
+        ? body.recordsAutoAnalyzed
+        : 0,
+    recordsUpdated:
+      typeof body.recordsUpdated === "number" ? body.recordsUpdated : 0,
     tasksCreated:
       typeof body.tasksCreated === "number" ? body.tasksCreated : 0,
+    tasksUpdated:
+      typeof body.tasksUpdated === "number" ? body.tasksUpdated : 0,
     duplicatesSkipped:
       typeof body.duplicatesSkipped === "number"
         ? body.duplicatesSkipped
@@ -342,16 +375,96 @@ async function runWorkflowAutomation() {
   } satisfies WorkflowAutomationRunResult;
 }
 
+function buildIntakeTestPayload(form: IntakeTestFormState) {
+  return {
+    demoType: form.demoType,
+    title: form.title.trim(),
+    status: "New",
+    source: form.source.trim() || null,
+    rawInput: {
+      title: form.title.trim(),
+      source: form.source.trim() || null,
+      internalNotes: form.internalNotes.trim() || null,
+      createdFrom: "internal_test_intake",
+    },
+    internalNotes: form.internalNotes.trim() || null,
+    analysis: null,
+    analysisApproved: false,
+    runAutomation: form.runAutomation,
+  };
+}
+
+async function sendTestWorkflowIntake(
+  form: IntakeTestFormState,
+): Promise<WorkflowIntakeTestResult> {
+  const response = await fetch("/api/internal/test-workflow-intake", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(buildIntakeTestPayload(form)),
+  });
+  let body: unknown;
+
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The API response was not valid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(getApiError(body, "The workflow intake test failed."));
+  }
+
+  if (
+    !isObjectRecord(body) ||
+    body.ok !== true ||
+    !isObjectRecord(body.record)
+  ) {
+    throw new Error("The API response did not confirm workflow intake.");
+  }
+
+  const automation = isObjectRecord(body.automation) ? body.automation : {};
+
+  return {
+    title: getString(body.record.title, form.title.trim()),
+    automation: {
+      ran: automation.ran === true,
+      tasksCreated:
+        typeof automation.tasksCreated === "number"
+          ? automation.tasksCreated
+          : 0,
+      statusUpdated: automation.statusUpdated === true,
+    },
+  };
+}
+
 function getWorkflowAutomationMessage(result: WorkflowAutomationRunResult) {
   return `Automation complete: ${result.recordsScanned} record${
     result.recordsScanned === 1 ? "" : "s"
-  } scanned, ${result.statusesUpdated} record${
-    result.statusesUpdated === 1 ? "" : "s"
+  } scanned, ${result.recordsAutoAnalyzed} record${
+    result.recordsAutoAnalyzed === 1 ? "" : "s"
+  } analyzed, ${result.recordsUpdated} record${
+    result.recordsUpdated === 1 ? "" : "s"
   } updated, ${result.tasksCreated} task${
     result.tasksCreated === 1 ? "" : "s"
-  } created, ${result.duplicatesSkipped} duplicate task${
+  } created, ${result.tasksUpdated} task${
+    result.tasksUpdated === 1 ? "" : "s"
+  } updated, ${result.duplicatesSkipped} duplicate task${
     result.duplicatesSkipped === 1 ? "" : "s"
   } skipped.`;
+}
+
+function getWorkflowIntakeTestMessage(result: WorkflowIntakeTestResult) {
+  if (!result.automation.ran) {
+    return `Created intake record "${result.title}".`;
+  }
+
+  return `Created intake record "${result.title}". Automation created ${
+    result.automation.tasksCreated
+  } task${result.automation.tasksCreated === 1 ? "" : "s"} and ${
+    result.automation.statusUpdated ? "updated" : "did not update"
+  } the record status.`;
 }
 
 function TaskCard({
@@ -583,6 +696,9 @@ export default function TaskQueueClient() {
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
   const [isRunningWorkflowAutomation, setIsRunningWorkflowAutomation] =
     useState(false);
+  const [intakeTestForm, setIntakeTestForm] =
+    useState<IntakeTestFormState>(emptyIntakeTestForm);
+  const [isSendingIntakeTest, setIsSendingIntakeTest] = useState(false);
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
   const [priorityFilter, setPriorityFilter] =
     useState<TaskPriorityFilter>("all");
@@ -709,6 +825,42 @@ export default function TaskQueueClient() {
       setIsRunningWorkflowAutomation(false);
     }
   }, [loadTasks]);
+
+  const handleSendTestIntake = useCallback(async () => {
+    if (intakeTestForm.title.trim().length < 3) {
+      setActionMessage({
+        kind: "error",
+        text: "Test intake title must be at least 3 characters.",
+      });
+      return;
+    }
+
+    setIsSendingIntakeTest(true);
+    setActionMessage(null);
+
+    try {
+      const result = await sendTestWorkflowIntake(intakeTestForm);
+
+      setActionMessage({
+        kind: "success",
+        text: getWorkflowIntakeTestMessage(result),
+        showActivityLogLink: true,
+      });
+      setIntakeTestForm((form) => ({
+        ...emptyIntakeTestForm,
+        demoType: form.demoType,
+        source: form.source,
+      }));
+      await loadTasks();
+    } catch (error) {
+      setActionMessage({
+        kind: "error",
+        text: getErrorMessage(error),
+      });
+    } finally {
+      setIsSendingIntakeTest(false);
+    }
+  }, [intakeTestForm, loadTasks]);
 
   const handleStartEdit = useCallback((task: DemoTask) => {
     setActionMessage(null);
@@ -890,7 +1042,7 @@ export default function TaskQueueClient() {
                 Automation
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Run internal automation using saved analysis JSON only.
+                Run internal automation using synced records and rule-based analysis.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -903,6 +1055,99 @@ export default function TaskQueueClient() {
                 {isRunningWorkflowAutomation ? "Running..." : "Run automation"}
               </button>
             </div>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+          <h2 className="text-base font-semibold text-white">Test intake</h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <label className="text-sm font-semibold text-slate-200">
+              Workflow
+              <select
+                value={intakeTestForm.demoType}
+                onChange={(event) =>
+                  setIntakeTestForm((form) => ({
+                    ...form,
+                    demoType: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+              >
+                {workflowOptions.map((workflow) => (
+                  <option key={workflow.demoType} value={workflow.demoType}>
+                    {workflow.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm font-semibold text-slate-200">
+              Title
+              <input
+                type="text"
+                value={intakeTestForm.title}
+                onChange={(event) =>
+                  setIntakeTestForm((form) => ({
+                    ...form,
+                    title: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
+            <label className="text-sm font-semibold text-slate-200">
+              Source
+              <input
+                type="text"
+                value={intakeTestForm.source}
+                onChange={(event) =>
+                  setIntakeTestForm((form) => ({
+                    ...form,
+                    source: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
+            <label className="text-sm font-semibold text-slate-200 md:col-span-3">
+              Notes
+              <textarea
+                value={intakeTestForm.internalNotes}
+                onChange={(event) =>
+                  setIntakeTestForm((form) => ({
+                    ...form,
+                    internalNotes: event.target.value,
+                  }))
+                }
+                rows={3}
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+              />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+              <input
+                type="checkbox"
+                checked={intakeTestForm.runAutomation}
+                onChange={(event) =>
+                  setIntakeTestForm((form) => ({
+                    ...form,
+                    runAutomation: event.target.checked,
+                  }))
+                }
+                className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400"
+              />
+              Run automation
+            </label>
+            <button
+              type="button"
+              onClick={() => void handleSendTestIntake()}
+              disabled={
+                isSendingIntakeTest || intakeTestForm.title.trim().length < 3
+              }
+              className="rounded-lg border border-cyan-400/60 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSendingIntakeTest ? "Sending..." : "Send test intake"}
+            </button>
           </div>
         </section>
 

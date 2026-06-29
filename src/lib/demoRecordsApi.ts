@@ -27,6 +27,11 @@ export type DemoRecordUpdate = {
   internal_notes?: string | null;
 };
 
+export type DemoRecordAnalysisUpdate = {
+  analysis: unknown;
+  analysis_approved: boolean;
+};
+
 type DemoRecordSnapshot = {
   id: string;
   demo_type: string;
@@ -239,6 +244,16 @@ export async function loadDemoRecordById(demoType: string, id: string) {
     .maybeSingle();
 }
 
+export async function insertDemoRecord(record: DemoRecordInsert) {
+  const supabase = getSupabaseAdminClient();
+
+  return supabase
+    .from("demo_records")
+    .insert(record)
+    .select(DEMO_RECORD_SELECT)
+    .single();
+}
+
 export async function replaceDemoRecords(
   demoType: string,
   records: DemoRecordInsert[],
@@ -289,6 +304,50 @@ export async function updateDemoRecord(
   demoType: string,
   id: string,
   updates: DemoRecordUpdate,
+) {
+  const supabase = getSupabaseAdminClient();
+  const { data: previousData, error: loadError } = await supabase
+    .from("demo_records")
+    .select(DEMO_RECORD_SELECT)
+    .eq("demo_type", demoType)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (loadError) {
+    return {
+      data: null,
+      error: loadError,
+      previousData: null,
+    };
+  }
+
+  if (!previousData) {
+    return {
+      data: null,
+      error: null,
+      previousData: null,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("demo_records")
+    .update(updates)
+    .eq("demo_type", demoType)
+    .eq("id", id)
+    .select(DEMO_RECORD_SELECT)
+    .maybeSingle();
+
+  return {
+    data,
+    error,
+    previousData,
+  };
+}
+
+export async function updateDemoRecordAnalysis(
+  demoType: string,
+  id: string,
+  updates: DemoRecordAnalysisUpdate,
 ) {
   const supabase = getSupabaseAdminClient();
   const { data: previousData, error: loadError } = await supabase
