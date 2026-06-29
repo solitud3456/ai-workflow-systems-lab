@@ -274,3 +274,16 @@ higher-risk prompt, sample JSON, and save-analysis workflow.
 - Added quick status update per record through existing PATCH API routes.
 - Linked internal workflow board with existing internal tools.
 - Created checkpoint tag `v19-internal-workflow-board`.
+
+## Task automation layer added
+
+- Added `demo_tasks` table to the Supabase schema.
+- Added `/api/demo-tasks` for internal task queue operations.
+- Added `/api/automation/create-tasks-from-record`.
+- Added `/internal/task-queue`.
+- Review Queue can generate tasks from saved record analysis.
+- Lead records can create follow-up tasks from `nextAction`.
+- Recruitment records can create screening/interview tasks from analysis.
+- Document Intake records can create multiple tasks from `actionItems`.
+- Improved task automation feedback for no-analysis, no-action-fields, and duplicate-task cases.
+- Created checkpoint tag `v22-task-automation-feedback`.
